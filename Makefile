@@ -1,7 +1,7 @@
-PATH:=$(HOME)/programs/cross/bin:$(PATH)
+PATH:=$(HOME)/gcc/cross/bin:$(PATH)
 TARGET=i686-elf
 
-all: init assemble link strip
+all: init assemble compile link strip
 	@echo -e "\nAssembled successfully."
 
 init:
@@ -9,15 +9,19 @@ init:
 	mkdir -p debug
 
 assemble:
-	echo "Assembling..."
+	@echo "\nAssembling..."
 	$(TARGET)-as -g src/boot.s -o build/boot.o
 
+compile:
+	@echo "\nCompiling kernel..."
+	$(TARGET)-gcc -c -fno-asynchronous-unwind-tables src/kernel.c -o build/kernel.o
+
 link:
-	@echo -e "\nGenerating executable..."
-	$(TARGET)-ld -T misc/link.ld build/boot.o -o build/boot.elf
+	@echo "\nGenerating executable..."
+	$(TARGET)-ld -T misc/link.ld build/boot.o build/kernel.o -o build/boot.elf
 
 strip:
-	@echo -e "\nGenerating debug info..."
+	@echo "\nGenerating debug info..."
 	$(TARGET)-objcopy --only-keep-debug build/boot.elf debug/boot.sym
 	$(TARGET)-objcopy -O binary build/boot.elf boot.bin
 

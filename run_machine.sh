@@ -7,7 +7,7 @@ if [ "$1" = "-debug" ]; then
 fi
 
 if [ ! -z "$DEBUG" ]; then
-	konsole -e bash -c 'cd ~/dev/kernel && gdb -iex "source misc/debug.gdbinit"'
+	konsole -e bash -c 'cd ~/dev/TestKernel && gdb -iex "source misc/debug.gdbinit"'
 fi
 
 qemu-system-i386 $DEBUG										\
