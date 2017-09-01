@@ -1,4 +1,8 @@
-ENTRY(_start)
+/*
+ * Must set the address to 0x7c00 so that the debugger knows
+ * where the code is when loaded by BIOS.
+ */
+
 SECTIONS
 {
 	. = 0x7c00;

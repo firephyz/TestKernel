@@ -1,17 +1,17 @@
 .code16
-.global _start
-.text
 
+.text
 _start:
+	xor %ax, %ax
+loop_start:
+	add $1, %ax
+	cmp $0, %ax
+	jne loop_start
 	
 	cli
+halt:
 	hlt
-	jmp -2
+	jmp halt
 
 
 .data
-string_0:
-	.ascii " > Hello OS World!"
-string_1:
-	.ascii " > "
-string_end:
