@@ -17,7 +17,7 @@ compile:
 	$(TARGET)-gcc -c -fno-asynchronous-unwind-tables -ffreestanding src/kernel.c -o build/kernel.o
 
 link:
-	@echo "\nGenerating executable..."
+	@echo "\nLinking object files..."
 	$(TARGET)-ld -nostdlib -T misc/link.ld build/boot.o build/kernel.o -o build/boot.elf
 
 strip:
