@@ -11,7 +11,7 @@ assemble:
 	$(TARGET)-as -g src/boot.s -o build/boot.o
 
 compile:
-	$(TARGET)-gcc -c -fno-asynchronous-unwind-tables -ffreestanding src/kernel.c -o build/kernel.o
+	$(TARGET)-gcc -g -c -fno-asynchronous-unwind-tables -ffreestanding src/kernel.c -o build/kernel.o
 
 link:
 	$(TARGET)-ld -nostdlib -T misc/link.ld build/boot.o build/kernel.o -o build/boot.elf
@@ -19,8 +19,6 @@ link:
 strip:
 	$(TARGET)-objcopy --only-keep-debug build/boot.elf debug/boot.sym
 	$(TARGET)-objcopy -O binary build/boot.elf boot.bin
-
-
 
 
 clean:
