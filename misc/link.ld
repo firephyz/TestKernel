@@ -21,23 +21,11 @@ SECTIONS
 	. = LOAD_ADDRESS + 0x1FE;
 	.magic : { SHORT(0xAA55) }
 
-	/*******************
-	 * Data structures *
-	 *******************/
-
-	/* Including room for 8 segment descriptors */
-	. = LOAD_ADDRESS + 0x200;
-	gdtr_value = .;
-	.gdt_section : { build/boot.o (gdt_section) }
-
-	. = LOAD_ADDRESS + 0x200 + 8 * 8;
-	.idt_section : { build/boot.o (idt_section) }
-
 	/***************
 	 * Kernel code *
 	 ***************/
 
-	. = 0x8000;
+	. = 0x7E00;
 	.os_text : { build/kernel.o (.text) }
 	.os_data : { build/kernel.o (.data) }
 }
