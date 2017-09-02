@@ -1,8 +1,11 @@
 .set GDT_DESC_LIMIT, 4
 .set CODE_SELECTOR, 0x08
 .set DATA_SELECTOR, 0x10
+.set OS_TEMP_BUFFER, 0x7E00
+.set MAX_SECTOR_LOAD, 128
 
 .global OS_SECTOR_LENGTH
+.global OS_ENTRY
 .code16
 
 .text
@@ -43,24 +46,37 @@ _load_os:
 	mov $0x80, %dl
 	int $0x13
 
-	mov $OS_SECTOR_LENGTH, %di
+	mov $0, %di
 	mov $0x0002, %cx // Start reading from the second sector
-	mov $0x7E00, %bx // Buffer is at 0x7E00
+	mov $OS_TEMP_BUFFER, %bx // Buffer is at 0x7E00
 	mov $0x0080, %dx // Head 0 and drive 80 (hard drive)
 
 load_os_loop:
 	// Fetch a sector from the disk
 	mov $0x0201, %ax // Read and get 1 sector
 	int $0x13
-	sub $1, %di
-	jnz load_os_loop
+	add $1, %di
+	add $1, %cx
+	add $512, %bx
+	cmp $MAX_SECTOR_LOAD, %di
+	je _os_too_large_exception
+	cmp $OS_SECTOR_LENGTH, %di
+	jne load_os_loop
 
 	pop %di
 	pop %ebx
 	ret
 
+_os_too_large_exception:
+	hlt
+	jmp -2
+
+/******************************
+ * 32 bit protected mode code *
+ ******************************/
+
+.code32
 _protected_mode:
-	.code32
 
 	// Init the segment registers
 	movw $DATA_SELECTOR, %ax
@@ -70,10 +86,35 @@ _protected_mode:
 	mov %ax, %gs
 	mov %ax, %ss
 
+	// Set the source and dest registers. These will automatically
+	// increment and be ready for the next loop if need be
+	mov $OS_ENTRY, %edi
+	mov $OS_TEMP_BUFFER, %esi
+	mov $0, %dx
+
+_move_os_loop:
+	// Move OS code to where it needs to go
+	mov $128, %cx
+	rep
+	movsd
+	add $1, %dx
+	cmp $OS_SECTOR_LENGTH, %dx
+	jne _move_os_loop
+
+	xor %eax, %eax
+	mov %eax, %ebx
+	mov %eax, %ecx
+	mov %eax, %edx
+	mov %eax, %esi
+	mov %eax, %edi
 	calll OS_ENTRY
 
 	hlt
 	jmp -2
+
+/***************************
+ * Global Descriptor Table *
+ ***************************/
 
 gdt_desc:
 	.word GDT_DESC_LIMIT * 8 // One descriptor is 8 bytes long
