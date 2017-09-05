@@ -17,3 +17,4 @@ qemu-system-i386 $DEBUG										\
                  -m 1024M                             		\
                  -boot d                              		\
                  -name "Lisp VM"                      		\
+                 -d in_asm,cpu -D /home/firephyz/dev/kernel/qemu.log

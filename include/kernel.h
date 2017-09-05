@@ -9,6 +9,11 @@
 
 #define VGA_COLOR(fg, bg) fg | (bg << 4)
 
+extern void * handle_int_08;
+extern void * handle_int_09;
+extern void * handle_int_xx;
+extern uint32_t CODE_SELECTOR;
+
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
 	VGA_COLOR_BLUE = 1,
@@ -35,13 +40,35 @@ struct console {
 	uint16_t * buffer;
 };
 
+struct idt_descriptor {
+	uint32_t first;
+	uint32_t second;
+};
+
+struct idt_ptr_t {
+	uint16_t limit;
+	uint32_t base;
+} __attribute__((packed));
+
+struct keyboard {
+	int start;
+	int end;
+	char buffer[256];
+};
+
+struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset);
+void fill_idt_table();
 void console_init();
 void console_clear_screen();
-void console_putchar(int x, int y, char character);
 static inline void console_check_bounds();
 static inline uint16_t set_vga_entry(char character);
 size_t strlen(char * string);
 void console_write_string(char * string);
-void console_write_character(char character);
+void console_putchar(char character);
+void console_write_number(unsigned int num);
+char getc();
+
+static inline uint8_t inb(uint16_t port);
+static inline void outb(uint16_t port, uint8_t value);
 
 #endif

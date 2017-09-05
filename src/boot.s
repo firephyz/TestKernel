@@ -3,9 +3,13 @@
 .set DATA_SELECTOR, 0x10
 .set OS_TEMP_BUFFER, 0x7E00
 .set MAX_SECTOR_LOAD, 128
+.set LOAD_ADDRESS, 0x7C00
+.set OS_ENTRY, 0x100000
 
-.global OS_SECTOR_LENGTH
+.global LOAD_ADDRESS
 .global OS_ENTRY
+.global CODE_SELECTOR
+
 .code16
 
 .text
@@ -75,6 +79,11 @@ _os_too_large_exception:
  * 32 bit protected mode code *
  ******************************/
 
+.macro OUTBYTE port, value
+	mov \value, %al
+	out %al, \port
+.endm
+
 .code32
 _protected_mode:
 
@@ -100,6 +109,23 @@ _move_os_loop:
 	add $1, %dx
 	cmp $OS_SECTOR_LENGTH, %dx
 	jne _move_os_loop
+
+	// Init the PIC
+	OUTBYTE $0x20, $0x11
+	OUTBYTE $0xA0, $0x11
+
+	OUTBYTE $0x21, $0x20
+	OUTBYTE $0xA1, $0x28
+
+	OUTBYTE $0x21, $0x04
+	OUTBYTE $0xA1, $0x02
+
+	OUTBYTE $0x21, $0x05
+	OUTBYTE $0xA1, $0x01
+
+	// Only enable IRQ's 0 and 1
+	OUTBYTE $0x21, $0xFD
+	OUTBYTE $0xA1, $0xFF
 
 	xor %eax, %eax
 	mov %eax, %ebx
@@ -132,3 +158,46 @@ gdt:
 	// Data selector
 	.word	0xFFFF, 0
 	.byte	0, 0x92, 0xCF, 0
+
+/**********************
+ * Interrupt Handlers *
+ **********************/
+
+.section .idt_handlers, "ax"
+
+.global handle_int_08
+handle_int_08:
+	movl 0x101002, %ecx
+	add $1, %ecx
+	mov %ecx, 0x101002
+	mov $0x20, %eax
+	out %eax, $0x20
+	iret
+
+.global handle_int_09
+handle_int_09:
+	.extern kbd
+	push %ebp
+	push %edi
+
+	lea kbd, %ebp
+	mov 4(%ebp), %edi // kbd.end into %edi
+	in $0x60, %al
+	lea 8(%ebp, %edi, 1), %edi // Load kbd.buffer[%edi] into %edi
+	mov %al, (%edi)
+
+	incl 4(%ebp) // Inc kbd.end and wrap to 0 if 256
+	cmpl $256, 4(%ebp)
+	jne handle_int_09_done
+	movl $0, 4(%ebp)
+handle_int_09_done:
+	
+	mov $0x20, %al
+	out %al, $0x20
+	pop %edi
+	pop %ebp
+	iret
+
+.global handle_int_xx
+handle_int_xx:
+	iret
