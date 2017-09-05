@@ -53,7 +53,7 @@ struct idt_ptr_t {
 struct keyboard {
 	int start;
 	int end;
-	char buffer[256];
+	uint8_t buffer[256];
 };
 
 struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset);

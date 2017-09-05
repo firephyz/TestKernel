@@ -1,7 +1,7 @@
 PATH:=$(HOME)/programs/cross/bin:$(PATH)
 DIR:=$(shell pwd)
 TARGET=i686-elf
-DEBUG=-g
+DEBUG=
 
 all: init assemble compile link strip
 
@@ -23,6 +23,7 @@ strip:
 	$(shell nm $(DIR)/debug/boot.sym | awk '{ print $1" "$3}' > $(DIR)/debug/boot.sym.bochs)
 	$(TARGET)-objcopy -R .comment build/boot.elf build/boot.elf
 	$(TARGET)-objcopy -O binary build/boot.elf boot.bin
+	$(shell cp boot.bin /home/firephyz/programs/bochs/boot.bin)
 
 
 clean:

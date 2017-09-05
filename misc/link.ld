@@ -29,25 +29,21 @@ SECTIONS
 	 */
 	. = OS_ENTRY;
 
-	OS_TEXT_LOAD_ADDR = 0x200;
-	.os_text 	: AT(OS_TEXT_LOAD_ADDR) 	{ build/kernel.o (.text) }
+	OS_LOAD_ADDR = 0x200;
+	.os_loaded 	: AT(OS_LOAD_ADDR) { build/kernel.o (.text)
+										  build/kernel.o (.data)
+										  build/kernel.o (.rodata)
+										  build/boot.o (.idt_handlers)}
 
-	OS_DATA_LOAD_ADDR = OS_TEXT_LOAD_ADDR + SIZEOF(.os_text);
-	.os_data 	: AT(OS_DATA_LOAD_ADDR) 	{ build/kernel.o (.data) }
-
-	OS_RODATA_LOAD_ADDR = OS_DATA_LOAD_ADDR + SIZEOF(.os_data);
-	.os_rodata 	: AT(OS_RODATA_LOAD_ADDR) 	{ build/kernel.o (.rodata) }
-
-
-	/**********************
-	 * Interrupt Handlers *
-	 **********************/
-
-	 IDT_LOAD_ADDR = OS_RODATA_LOAD_ADDR + SIZEOF(.os_rodata);
-	.idt_handlers 	: AT(IDT_LOAD_ADDR)	{ build/boot.o (.idt_handlers) }
-
-
-	.test : AT(0x167FFF) { BYTE(0xa5) }
+	/* Make output binary a size multiple of 512 */
+	FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);
+	ALIGN_POINT = 512 * ((FINAL_ADDR / 512) + 1) - 1;
+	.end_byte : AT(ALIGN_POINT) { BYTE(0x0) }
+	
+	/*
+	 * // Used to make the disk compatable with Bochs
+	.test : AT(0x168000 - 1) { BYTE(0x5a) }
+	 */
 
 
 	/* Calculate the number of sectors the OS takes

@@ -6,18 +6,17 @@ struct idt_ptr_t idt_ptr ;
 struct idt_descriptor idt_table[256] asm("idt_table") __attribute__((aligned (8)));
 struct console system_out;
 struct keyboard kbd;
-int cont = 0;
-//char key_codes[8] =  {0x0,  0x0, '1', '2',  '3', '4', '5', '6'};	\
-// 					   '7',  '8', '9', '0',  '-', '=', 0x0, '\t',	\
-// 					   'q',  'w', 'e', 'r',  't', 'y', 'u', 'i',	\
-// 					   'o',  'p', '[', ']',  0x0, 0x0, 'a', 's',	\
-// 					   'd',  'f', 'g', 'h',  'j', 'k', 'l', ';',	\
-// 					   '\'', '`', 0x0, '\\', 'z', 'x', 'c', 'v',	\
-// 					   'b',  'n', 'm', ',',  '.', '/', 0x0, '*',	\
-// 					   0x0,  ' ', 0x0, 0x0,  0x0, 0x0, 0x0, 0x0,	\
-// 					   0x0,  0x0, 0x0, 0x0,  0x0, 0x0, 0x0, '7',	\
-// 					   '8',  '9', '-', '4',  '5', '6', '+', '1',	\
-// 					   '2',  '3', '0', '.',  0x0, 0x0, 0x0, 0x0};
+char key_codes[88] =  {0x0,  0x0, '1', '2',  '3', '4', '5', '6',	\
+					   '7',  '8', '9', '0',  '-', '=', 0x0, '\t',	\
+					   'q',  'w', 'e', 'r',  't', 'y', 'u', 'i',	\
+					   'o',  'p', '[', ']',  0x0, 0x0, 'a', 's',	\
+					   'd',  'f', 'g', 'h',  'j', 'k', 'l', ';',	\
+					   '\'', '`', 0x0, '\\', 'z', 'x', 'c', 'v',	\
+					   'b',  'n', 'm', ',',  '.', '/', 0x0, '*',	\
+					   0x0,  ' ', 0x0, 0x0,  0x0, 0x0, 0x0, 0x0,	\
+					   0x0,  0x0, 0x0, 0x0,  0x0, 0x0, 0x0, '7',	\
+					   '8',  '9', '-', '4',  '5', '6', '+', '1',	\
+					   '2',  '3', '0', '.',  0x0, 0x0, 0x0, 0x0};
 
 void kernel_start(void) {
 
@@ -31,16 +30,12 @@ void kernel_start(void) {
 	console_write_number((unsigned int)&CODE_SELECTOR);
 
 	while (1) {
-		if(cont != 0) {
-			asm("int $0x21");
-		}
-		
-		console_write_number(getc());
-		console_write_string(" [");
-		console_write_number(kbd.start);
-		console_write_string(",");
-		console_write_number(kbd.end);
-		console_write_string("]\n");
+		char test[2];
+		char c = getc();
+		console_write_number(c);
+		test[0] = key_codes[c];
+		test[1] = '\0';
+		console_write_string(test);
 	}
 }
 
@@ -67,7 +62,7 @@ void console_write_number(unsigned int num) {
 			break;
 		}
 
-		int mod = num % 16;
+		unsigned int mod = num % 16;
 		if(mod < 10) {
 			nums[index] = mod + '0';
 		}
@@ -83,14 +78,16 @@ void console_write_number(unsigned int num) {
 
 char getc() {
 
-	while(kbd.start == kbd.end) {
+	while(kbd.start == kbd.end) {}
 
+	uint8_t result = kbd.buffer[kbd.start];
+
+	++kbd.start;
+	if(kbd.start == 0xFF) {
+		kbd.start = 0;
 	}
 
-	char result = kbd.buffer[kbd.start];
-	++kbd.start;
-
-	return result;
+	return key_codes[result];
 }
 
 void fill_idt_table() {
