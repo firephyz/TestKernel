@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "console.h"
 #include <stdint.h>
 
 char getc() {
@@ -11,6 +12,9 @@ char getc() {
 	if(kbd.start == 0xFF) {
 		kbd.start = 0;
 	}
+
+	//console_write_number(result);
+	//console_putchar(' ');
 
 	return key_codes[result];
 }

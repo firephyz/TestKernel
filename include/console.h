@@ -29,8 +29,8 @@ enum vga_color {
 };
 
 struct console {
-	uint8_t x_pos;
-	uint8_t y_pos;
+	int8_t x_pos;
+	int8_t y_pos;
 	uint8_t color;
 	uint16_t * buffer;
 };
@@ -40,6 +40,7 @@ void console_putchar(char character);
 void console_write_number(unsigned int num);
 void console_init();
 void console_clear_screen();
+static inline void console_write_char(char c);
 static inline void console_check_bounds();
 static inline uint16_t set_vga_entry(char character);
 

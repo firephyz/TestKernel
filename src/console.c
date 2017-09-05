@@ -58,15 +58,32 @@ void console_putchar(char character) {
 	if(character == '\n') {
 		system_out.x_pos = 0;
 		system_out.y_pos += 1;
+
+		console_check_bounds();
+	}
+	else if (character == '\b') {
+
+		if(system_out.x_pos == 0) return;
+		
+		--system_out.x_pos;
+		console_write_char(' ');
+	}
+	else if (character == '\0') {
+		return;
 	}
 	else {
-		int index = CONSOLE_WIDTH * system_out.y_pos + system_out.x_pos;
-		system_out.buffer[index] = set_vga_entry(character);
-
+		console_write_char(character);
 		++system_out.x_pos;
-	}
 
-	console_check_bounds();
+		console_check_bounds();
+	}
+}
+
+static inline void console_write_char(char c) {
+
+	int index = CONSOLE_WIDTH * system_out.y_pos + system_out.x_pos;
+	system_out.buffer[index] = set_vga_entry(c);
+	return;
 }
 
 static inline void console_check_bounds() {
