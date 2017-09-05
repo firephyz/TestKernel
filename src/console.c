@@ -68,6 +68,11 @@ void console_putchar(char character) {
 		--system_out.x_pos;
 		console_write_char(' ');
 	}
+	else if (character == '\t') {
+		system_out.x_pos += 4;
+
+		console_check_bounds();
+	}
 	else if (character == '\0') {
 		return;
 	}

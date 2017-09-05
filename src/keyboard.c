@@ -20,8 +20,8 @@ char getc() {
 		kbd.start = 0;
 	}
 
-	//console_write_number(result);
-	//console_putchar(' ');
+	// console_write_number(result);
+	// console_putchar(' ');
 
 	if(kbd.ctr_mask & CONTROL_SHIFT) {
 		return key_codes_shift[result];
@@ -34,10 +34,10 @@ void handle_int_09() {
 
 	uint8_t input = inb(0x60);
 
-	if(input == 0x2A) {
+	if(input == 0x2A || input == 0x36) {
 		kbd.ctr_mask |= CONTROL_SHIFT;
 	}
-	else if (input == 0xAA) {
+	else if (input == 0xAA || input == 0xB6) {
 		kbd.ctr_mask &= !CONTROL_SHIFT;
 	}
 	// Is a normal character
