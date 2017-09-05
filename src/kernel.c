@@ -53,7 +53,8 @@ void kernel_start(void) {
 	}
 }
 
-static inline uint8_t inb(uint16_t port) {
+uint8_t inb(uint16_t port) {
+
 	uint8_t result = 0;
 	asm volatile ("inb %1, %0"
 		: "=a" (result)
@@ -61,8 +62,12 @@ static inline uint8_t inb(uint16_t port) {
 	return result;
 }
 
-static inline void outb(uint16_t port, uint8_t value) {
+void outb(uint16_t port, uint8_t value) {
 
+	asm volatile ("outb %1, %0"
+		:
+		: "Nd" (port), "a" (value));
+	return;
 }
 
 void fill_idt_table() {
@@ -72,7 +77,7 @@ void fill_idt_table() {
 
 	for(int i = 0; i < 256; ++i) {
 		if(i == 0x21) {
-			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&handle_int_09);
+			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&interrupt_09);
 		}
 		else if (i == 0x20) {
 			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&handle_int_08);

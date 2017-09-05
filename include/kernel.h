@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 extern void * handle_int_08;
-extern void * handle_int_09;
+extern void * interrupt_09;
 extern void * handle_int_xx;
 extern uint32_t CODE_SELECTOR;
 
@@ -24,13 +24,14 @@ struct idt_ptr_t {
 } __attribute__((packed));
 
 
-
+void kernel_start(void);
 struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset);
 void fill_idt_table();
 size_t strlen(char * string);
 char getc();
 
-static inline uint8_t inb(uint16_t port);
-static inline void outb(uint16_t port, uint8_t value);
+uint8_t inb(uint16_t port);
+
+void outb(uint16_t port, uint8_t value);
 
 #endif

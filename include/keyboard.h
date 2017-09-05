@@ -11,5 +11,6 @@ struct keyboard {
 };
 
 char getc();
+void handle_int_09();
 
 #endif

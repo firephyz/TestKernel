@@ -174,28 +174,35 @@ handle_int_08:
 	out %eax, $0x20
 	iret
 
-.global handle_int_09
-handle_int_09:
-	.extern kbd
-	push %ebp
-	push %edi
+// .global handle_int_09
+// handle_int_09:
+// 	.extern kbd
+// 	push %ebp
+// 	push %edi
 
-	lea kbd, %ebp
-	mov 4(%ebp), %edi // kbd.end into %edi
-	in $0x60, %al
-	lea 8(%ebp, %edi, 1), %edi // Load kbd.buffer[%edi] into %edi
-	mov %al, (%edi)
+// 	lea kbd, %ebp
+// 	mov 4(%ebp), %edi // kbd.end into %edi
+// 	in $0x60, %al
+// 	lea 8(%ebp, %edi, 1), %edi // Load kbd.buffer[%edi] into %edi
+// 	mov %al, (%edi)
 
-	incl 4(%ebp) // Inc kbd.end and wrap to 0 if 256
-	cmpl $256, 4(%ebp)
-	jne handle_int_09_done
-	movl $0, 4(%ebp)
-handle_int_09_done:
+// 	incl 4(%ebp) // Inc kbd.end and wrap to 0 if 256
+// 	cmpl $256, 4(%ebp)
+// 	jne handle_int_09_done
+// 	movl $0, 4(%ebp)
+// handle_int_09_done:
 	
-	mov $0x20, %al
-	out %al, $0x20
-	pop %edi
-	pop %ebp
+// 	mov $0x20, %al
+// 	out %al, $0x20
+// 	pop %edi
+// 	pop %ebp
+// 	iret
+
+.global interrupt_09
+.global handle_int_09
+.type	handle_int_09, @function
+interrupt_09:
+	call handle_int_09
 	iret
 
 .global handle_int_xx
