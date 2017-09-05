@@ -4,12 +4,19 @@
 #include <stdint.h>
 #include "kernel.h"
 
+#define CONTROL_CLEAR	0x0
+#define CONTROL_SHIFT	0x1
+
 struct keyboard {
 	int start;
 	int end;
 	uint8_t buffer[256];
+	uint8_t ctr_mask;
 };
 
+extern struct keyboard kbd;
+
+void keyboard_init();
 char getc();
 void handle_int_09();
 

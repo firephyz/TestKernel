@@ -12,6 +12,7 @@ extern uint32_t CODE_SELECTOR;
 extern struct keyboard kbd;
 extern struct console system_out;
 extern char key_codes[256];
+extern char key_codes_shift[256];
 
 struct idt_descriptor {
 	uint32_t first;

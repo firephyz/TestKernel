@@ -1,7 +1,7 @@
 PATH:=$(HOME)/gcc/cross/bin:$(PATH)
 DIR:=$(shell pwd)
 TARGET=i686-elf
-DEBUG=
+DEBUG=-g
 
 all: init assemble compile link strip
 
