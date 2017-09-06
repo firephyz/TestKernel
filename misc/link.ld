@@ -30,10 +30,11 @@ SECTIONS
 	. = OS_ENTRY;
 
 	OS_LOAD_ADDR = 0x200;
-	.os_loaded 	: AT(OS_LOAD_ADDR) { build/* (.text)
+	.os_loaded 	: AT(OS_LOAD_ADDR) { build/kernel.o (.os_entry)
+									 build/boot.o (.idt_handlers)
+									 build/* (.text)
 									 build/* (.data)
-									 build/* (.rodata)
-									 build/boot.o (.idt_handlers)}
+									 build/* (.rodata)}
 
 	/* Make output binary a size multiple of 512 */
 	FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);

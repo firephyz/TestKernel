@@ -6,6 +6,7 @@
 .set LOAD_ADDRESS, 0x7C00
 .set OS_ENTRY, 0x100000
 
+// Make these variables available to C files
 .global LOAD_ADDRESS
 .global OS_ENTRY
 .global CODE_SELECTOR
@@ -28,7 +29,7 @@ _start:
 	// Load the OS into memory
 	call _load_os
 
-	lgdtl gdt_desc
+	lgdtl _gdt_desc
 
 	// Set the PE flag bit and enter into 32 bit protected mode!
 	movl %cr0, %eax
@@ -55,7 +56,7 @@ _load_os:
 	mov $OS_TEMP_BUFFER, %bx // Buffer is at 0x7E00
 	mov $0x0080, %dx // Head 0 and drive 80 (hard drive)
 
-load_os_loop:
+_load_os_loop:
 	// Fetch a sector from the disk
 	mov $0x0201, %ax // Read and get 1 sector
 	int $0x13
@@ -63,15 +64,15 @@ load_os_loop:
 	add $1, %cx
 	add $512, %bx
 	cmp $MAX_SECTOR_LOAD, %di
-	je _os_too_large_exception
+	je _os_too_large
 	cmp $OS_SECTOR_LENGTH, %di
-	jne load_os_loop
+	jne _load_os_loop
 
 	pop %di
 	pop %ebx
 	ret
 
-_os_too_large_exception:
+_os_too_large:
 	hlt
 	jmp -2
 
@@ -123,7 +124,7 @@ _move_os_loop:
 	OUTBYTE $0x21, $0x05
 	OUTBYTE $0xA1, $0x01
 
-	// Only enable IRQ's 0 and 1
+	// Only enable IRQ 0
 	OUTBYTE $0x21, $0xFD
 	OUTBYTE $0xA1, $0xFF
 
@@ -133,7 +134,7 @@ _move_os_loop:
 	mov %eax, %edx
 	mov %eax, %esi
 	mov %eax, %edi
-	calll OS_ENTRY
+	call OS_ENTRY
 
 	hlt
 	jmp -2
@@ -142,11 +143,12 @@ _move_os_loop:
  * Global Descriptor Table *
  ***************************/
 
-gdt_desc:
+_gdt_desc:
 	.word GDT_DESC_LIMIT * 8 // One descriptor is 8 bytes long
-	.long gdt
+	.long _gdt
 
-gdt:
+.align 8
+_gdt:
 	// Null selector
 	.word	0, 0
 	.byte	0, 0, 0, 0
@@ -165,46 +167,12 @@ gdt:
 
 .section .idt_handlers, "ax"
 
-.global handle_int_08
-handle_int_08:
-	movl 0x101002, %ecx
-	add $1, %ecx
-	mov %ecx, 0x101002
-	mov $0x20, %eax
-	out %eax, $0x20
-	iret
-
-// .global handle_int_09
-// handle_int_09:
-// 	.extern kbd
-// 	push %ebp
-// 	push %edi
-
-// 	lea kbd, %ebp
-// 	mov 4(%ebp), %edi // kbd.end into %edi
-// 	in $0x60, %al
-// 	lea 8(%ebp, %edi, 1), %edi // Load kbd.buffer[%edi] into %edi
-// 	mov %al, (%edi)
-
-// 	incl 4(%ebp) // Inc kbd.end and wrap to 0 if 256
-// 	cmpl $256, 4(%ebp)
-// 	jne handle_int_09_done
-// 	movl $0, 4(%ebp)
-// handle_int_09_done:
-	
-// 	mov $0x20, %al
-// 	out %al, $0x20
-// 	pop %edi
-// 	pop %ebp
-// 	iret
-
-.global interrupt_09
-.global handle_int_09
-.type	handle_int_09, @function
-interrupt_09:
+.global _interrupt_09
+_interrupt_09:
 	call handle_int_09
 	iret
 
-.global handle_int_xx
-handle_int_xx:
+.global _interrupt_xx
+_interrupt_xx:
+	call handle_int_xx
 	iret

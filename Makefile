@@ -1,4 +1,4 @@
-PATH:=$(HOME)/gcc/cross/bin:$(PATH)
+PATH:=$(HOME)/programs/cross/bin:$(PATH)
 DIR:=$(shell pwd)
 TARGET=i686-elf
 DEBUG=-g
@@ -13,9 +13,9 @@ assemble:
 	$(TARGET)-as $(DEBUG) src/boot.s -o build/boot.o
 
 compile:
-	$(TARGET)-gcc $(DEBUG) -c -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include -o build/kernel.o src/kernel.c
-	$(TARGET)-gcc $(DEBUG) -c -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include -o build/console.o src/console.c
-	$(TARGET)-gcc $(DEBUG) -c -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include -o build/keyboard.o src/keyboard.c
+	$(TARGET)-gcc $(DEBUG) -O0 -c -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include -o build/kernel.o src/kernel.c
+	$(TARGET)-gcc $(DEBUG) -O0 -c -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include -o build/console.o src/console.c
+	$(TARGET)-gcc $(DEBUG) -O0 -c -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include -o build/keyboard.o src/keyboard.c
 
 link:
 	$(TARGET)-ld -nostdlib -T misc/link.ld build/boot.o build/kernel.o build/console.o build/keyboard.o -o build/boot.elf

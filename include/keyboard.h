@@ -14,6 +14,8 @@ struct keyboard {
 	uint8_t ctr_mask;
 };
 
+extern char key_codes[256];
+extern char key_codes_shift[256];
 extern struct keyboard kbd;
 
 void keyboard_init();

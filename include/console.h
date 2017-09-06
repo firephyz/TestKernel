@@ -7,7 +7,13 @@
 #define CONSOLE_WIDTH 80
 #define CONSOLE_HEIGHT 25
 
+#define PRT_BASE_2		2
+#define PRT_BASE_8		8
+#define PRT_BASE_10		10
+#define PRT_BASE_16		16
+
 #define VGA_COLOR(fg, bg) fg | (bg << 4)
+#define SET_VGA_ENTRY(character) system_out.color << 8 | character
 
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -35,13 +41,30 @@ struct console {
 	uint16_t * buffer;
 };
 
-void console_write_string(char * string);
-void console_putchar(char character);
-void console_write_number(unsigned int num);
 void console_init();
 void console_clear_screen();
-static inline void console_write_char(char c);
-static inline void console_check_bounds();
-static inline uint16_t set_vga_entry(char character);
+void console_print_string(char * string);
+void console_print_int(int32_t num, int base);
+void console_putchar(char character);
+
+// Sets the character under the current cursor and does nothing else
+static inline void console_write_char(char c) {
+
+	int index = CONSOLE_WIDTH * system_out.y_pos + system_out.x_pos;
+	system_out.buffer[index] = SET_VGA_ENTRY(c);
+	return;
+}
+
+// Handle cursor updates
+static inline void console_check_bounds() {
+	if(system_out.x_pos == CONSOLE_WIDTH) {
+		system_out.x_pos = 0;
+		++system_out.y_pos;
+	}
+
+	if(system_out.y_pos == CONSOLE_HEIGHT) {
+		system_out.y_pos = 0;
+	}
+}
 
 #endif

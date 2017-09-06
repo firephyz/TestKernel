@@ -17,3 +17,4 @@ qemu-system-i386 $DEBUG										\
                  -m 1024M                             		\
                  -boot d                              		\
                  -name "Lisp VM"                      		\
+                 -monitor stdio
