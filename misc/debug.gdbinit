@@ -5,5 +5,4 @@ hbreak kernel_start
 layout next
 layout next
 layout next
-focus cmd
 continue

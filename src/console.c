@@ -13,6 +13,7 @@ void console_init() {
 	system_out.buffer = (uint16_t *)0xB8000;
 
 	console_clear_screen();
+	console_move_cursor(0, 0);
 }
 
 void console_clear_screen() {
@@ -133,4 +134,6 @@ void console_putchar(char character) {
 
 		console_check_bounds();
 	}
+
+	console_move_cursor(system_out.x_pos, system_out.y_pos);
 }

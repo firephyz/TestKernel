@@ -10,6 +10,12 @@
 #define PIC_MASTER_DATA_PORT	0x21
 #define PIC_SLAVE_COMMAND_PORT	0xA0
 #define PIC_SLAVE_DATA_PORT		0xA1
+#define VGA_ADDRESS_PORT		0x3D4
+#define VGA_DATA_PORT		0x3D5
+
+// VGA Communcation Data
+#define VGA_CURSOR_LOC_LOW		0x0F
+#define VGA_CURSOR_LOC_HIGH		0x0E
 
 // End of interrupt signal for the PIC
 #define PIC_EOI				0x20

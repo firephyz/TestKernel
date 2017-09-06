@@ -42,9 +42,9 @@ SECTIONS
 	.end_byte : AT(ALIGN_POINT) { BYTE(0x0) }
 	
 	/*
-	 * // Used to make the disk compatable with Bochs
+	// Used to make the disk compatable with Bochs
 	.test : AT(0x168000 - 1) { BYTE(0x5a) }
-	 */
+	*/
 
 
 	/* Calculate the number of sectors the OS takes
