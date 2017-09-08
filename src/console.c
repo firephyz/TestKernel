@@ -6,29 +6,61 @@
 // Sets the character under the current cursor and does nothing else
 static inline void console_write_char(char c) {
 
-	int index = CONSOLE_WIDTH * system_out.y_pos + system_out.x_pos;
-	system_out.buffer[index] = SET_VGA_ENTRY(c);
+	int index = CONSOLE_WIDTH * stdout.y_pos + stdout.x_pos;
+	stdout.buffer[index] = SET_VGA_ENTRY(c);
 	return;
+}
+
+static inline void set_console_state(int value) {
+	stdout.state = value;
+}
+
+static inline void console_record_character(char character) {
+
+	if(character != '\b') {
+		stdout.char_buffer[stdout.char_index] = character;
+		++stdout.char_index;
+		if(stdout.char_index == CONSOLE_SIZE) {
+			stdout.char_index = 0;
+		}
+	}
 }
 
 void console_init() {
 
-	system_out.x_pos = 0;
-	system_out.y_pos = 0;
-	system_out.color = VGA_COLOR(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-	system_out.buffer = (uint16_t *)0xB8000;
+	stdout.x_pos = 0;
+	stdout.y_pos = 0;
+	stdout.color = VGA_COLOR(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+	stdout.buffer = (uint16_t *)0xB8000;
+	stdout.char_index = 0;
 
+	set_console_state(stdout.state | CONSOLE_IS_RESETING);
 	console_clear_screen();
+	// Also clear character buffer
+	for(int i = 0; i < CONSOLE_SIZE; ++i) {
+		stdout.char_buffer[i] = '\0';
+	}
+
+	stdout.x_pos = 0;
+	stdout.y_pos = 0;
 	console_move_cursor(0, 0);
+	set_console_state(stdout.state & ~CONSOLE_IS_RESETING);
 }
 
 void console_clear_screen() {
 
+	stdout.x_pos = 0;
+	stdout.y_pos = 0;
+	set_console_state(stdout.state | CONSOLE_FREEZE_CURSOR);
+	// Clear on screen text buffer
 	for(int y = 0; y < CONSOLE_HEIGHT; ++y) {
 		for(int x = 0; x < CONSOLE_WIDTH; ++x) {
 			console_putchar(' ');
 		}
 	}
+	set_console_state(stdout.state & ~CONSOLE_FREEZE_CURSOR);
+	stdout.x_pos = 0;
+	stdout.y_pos = 0;
 }
 
 void console_print_string(char * string) {
@@ -113,24 +145,29 @@ void console_print_int(int32_t num, int base) {
 // Set character under cursor and move the cursor as well
 void console_putchar(char character) {
 
+	// Only record the character if we are not clearing it.
+	if(!(stdout.state & CONSOLE_IS_SCROLLING)) {
+		console_record_character(character);
+	}
+
 	if(character == '\n') {
-		system_out.x_pos = 0;
-		system_out.y_pos += 1;
+		stdout.x_pos = 0;
+		stdout.y_pos += 1;
 
 		console_check_bounds();
 	}
 	else if (character == '\b') {
 
-		if(system_out.x_pos == 0) {
-			--system_out.y_pos;
-			system_out.x_pos = CONSOLE_WIDTH;
+		if(stdout.x_pos == 0) {
+			--stdout.y_pos;
+			stdout.x_pos = CONSOLE_WIDTH;
 		}
 		
-		--system_out.x_pos;
+		--stdout.x_pos;
 		console_write_char(' ');
 	}
 	else if (character == '\t') {
-		system_out.x_pos += 4;
+		stdout.x_pos += 4;
 
 		console_check_bounds();
 	}
@@ -139,10 +176,87 @@ void console_putchar(char character) {
 	}
 	else {
 		console_write_char(character);
-		++system_out.x_pos;
+		++stdout.x_pos;
 
 		console_check_bounds();
 	}
 
-	console_move_cursor(system_out.x_pos, system_out.y_pos);
+	// Only update the cursor position if it isn't frozen
+	if(!(stdout.state & CONSOLE_FREEZE_CURSOR)) {
+		console_move_cursor(stdout.x_pos, stdout.y_pos);
+	}
+}
+
+// Handle console boundary stuff
+void console_check_bounds() {
+
+	if(stdout.x_pos == CONSOLE_WIDTH) {
+		stdout.x_pos = 0;
+		++stdout.y_pos;
+	}
+
+	// Only process the y hitting the bottom if we aren't
+	// reseting the console and aren't already scrolling. 
+	// We don't need to scroll a blank screen.
+	if((stdout.y_pos >= CONSOLE_HEIGHT)
+		&& !(stdout.state & CONSOLE_IS_SCROLLING)
+		&& !(stdout.state & CONSOLE_IS_RESETING)) {
+
+		if(!(stdout.state & CONSOLE_IS_SCROLLING)) {
+			set_console_state(stdout.state | CONSOLE_IS_SCROLLING);
+		}
+
+		// NOT CURRENT CONFIGURATION
+		// USE SCROLLING INSTEAD
+		// // Wrap bottom up screen back to the top
+		// stdout.y_pos = 0;
+
+		// Remove the top line of console characters
+		// Find the new line
+		int index = 0;
+		int newline_index = -1;
+		while((stdout.char_buffer[index] != '\n')
+			&& (index < CONSOLE_WIDTH)) {
+
+			++index;
+
+			// No new line encountered. Scroll everything up
+			if(index == CONSOLE_WIDTH) {
+				index--;
+				break;
+			}
+		}
+		newline_index = index + 1;
+
+		// Copy all remaining characters back to the
+		// beginning of the buffer
+		// Assuming the end of the characters will end with a null
+		// terminator. Let's hope that's true
+		++index;
+		while((stdout.char_buffer[index] != '\0')
+			&& (index < CONSOLE_SIZE)) {
+
+			stdout.char_buffer[index - newline_index] = stdout.char_buffer[index];
+			++index;
+		}
+		stdout.char_buffer[index - newline_index] = '\0';
+
+		// Redraw the updated character buffer
+		console_clear_screen();
+		set_console_state(stdout.state | CONSOLE_FREEZE_CURSOR);
+		for(index = 0; index < CONSOLE_SIZE; ++index) {
+
+			if(stdout.char_buffer[index] == '\0') break;
+
+			console_putchar(stdout.char_buffer[index]);
+		}
+		set_console_state(stdout.state & ~CONSOLE_FREEZE_CURSOR);
+
+		// Reset console variables to the new line at the bottom we just
+		// made room for and stop scrolling
+		stdout.x_pos = 0;
+		stdout.y_pos = 24;
+		stdout.char_index -= newline_index;
+		set_console_state(stdout.state & ~CONSOLE_IS_SCROLLING);
+	}
 }

@@ -4,10 +4,15 @@
 #include <stdint.h>
 #include "kernel.h"
 
+// Keyboard control constants
 #define CONTROL_CLEAR	0x0
 #define CONTROL_SHIFT	0x1
 
-#define KBD_BUFFER_SIZE 	32
+#define KBD_BUFFER_SIZE 	128
+
+// Define the enter key to emit a special unsed char code
+// so that the kernel knows when the end of a command is reached.
+#define ENTER_KEYCODE_MAP		0xFF
 
 struct keyboard {
 	int start;

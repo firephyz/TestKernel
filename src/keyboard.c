@@ -3,10 +3,14 @@
 #include "console.h"
 #include <stdint.h>
 
+// Filled the table with the special enter key
+// so that the kernel prompt works correctly.
+// Will probably need to change later so that we can use the keyboard
+// like normal in a user program.
 char key_codes[256] = {0x0,  0x0, '1', '2',  '3',  '4', '5',  '6',	\
 					   '7',  '8', '9', '0',  '-',  '=', '\b', '\t',	\
 					   'q',  'w', 'e', 'r',  't',  'y', 'u',  'i',	\
-					   'o',  'p', '[', ']',  '\n', 0x0, 'a',  's',	\
+					   'o',  'p', '[', ']',  ENTER_KEYCODE_MAP, 0x0, 'a',  's',	\
 					   'd',  'f', 'g', 'h',  'j',  'k', 'l',  ';',	\
 					   '\'', '`', 0x0, '\\', 'z',  'x', 'c',  'v',	\
 					   'b',  'n', 'm', ',',  '.',  '/', 0x0,  '*',	\
@@ -88,7 +92,7 @@ void handle_int_09() {
 		kbd.ctr_mask &= !CONTROL_SHIFT;
 	}
 	// Only report actual key presses, not break codes
-	if(input < 0x80) {
+	else if(input < 0x80) {
 		// Check if buffer is already full
 		if(kbd.end == kbd.start - 1 ||
 			(kbd.start == 0 && kbd.end == KBD_BUFFER_SIZE - 1)) {

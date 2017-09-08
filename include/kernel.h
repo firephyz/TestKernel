@@ -34,13 +34,15 @@
 #define IRQ_DISK_1		0x2E
 #define IRQ_DISK_2		0x2F
 
+#define MAX_COMMAND_LENGTH 1024
+
 // External hooks to boot.s
 extern void * _interrupt_09;
 extern void * _interrupt_xx;
 extern uint32_t CODE_SELECTOR;
 
 extern struct keyboard kbd;
-extern struct console system_out;
+extern struct console stdout;
 
 struct idt_descriptor {
 	uint32_t first;
@@ -54,6 +56,8 @@ struct idt_ptr_t {
 
 // Kernel start point
 void kernel_start(void);
+void run_prompt();
+void get_input_command(char * string);
 
 size_t strlen(char * string);
 

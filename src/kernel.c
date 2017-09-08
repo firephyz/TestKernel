@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 struct idt_ptr_t idt_ptr ;
-struct console system_out;
+struct console stdout;
 struct keyboard kbd;
 struct idt_descriptor idt_table[256] __attribute__((aligned (8)));
 
@@ -17,9 +17,70 @@ void kernel_start(void) {
 	console_init();
 	keyboard_init();
 
-	while (1) {
-		char c = getc();
-		console_putchar(c);
+	// Print the welcome message.
+	char * welcome = "\n\
+ ***************************\n\
+ *        Welcome to       *\n\
+ *        <OS_NAME>        *\n\
+ *                         *\n\
+ * Use at your own risk... *\n\
+ ***************************\n\n";
+ 	int index = 0;
+ 	while(welcome[index] != '\0') {
+ 		console_putchar(welcome[index]);
+ 		++index;
+ 		// Add small delay. It looks cool :)
+ 		for(int i = 0; i < 5000000; ++i) {}
+ 	}
+
+ 	// Begin main os prompt loop
+	run_prompt();
+}
+
+void run_prompt() {
+
+	char * prompt_string = " > ";
+	char input_string[MAX_COMMAND_LENGTH + 1];
+
+	while(1) {
+		console_print_string(prompt_string);
+		get_input_command(input_string);
+
+		// console_print_string("\n => ");
+		// console_print_string(input_string);
+		console_putchar('\n');
+	}
+}
+
+void get_input_command(char * string) {
+
+	int index = 0;
+	char input_char = '\0';
+
+	while(index < MAX_COMMAND_LENGTH) {
+
+		input_char = getc();
+
+		// Enter key is special. Signals end of command
+		if((unsigned char)input_char == ENTER_KEYCODE_MAP) {
+			string[index] = '\0';
+			return;
+		}
+		// Backspace is also special. Shouldn't store that in the command string
+		else if(input_char == '\b') {
+			// Don't let user back up into the prompt. That's bad.
+			if(index != 0) {
+				--index;
+				string[index] = '\0';
+				console_putchar(input_char);
+			}
+		}
+		// Normal characters
+		else {
+			console_putchar(input_char);
+			string[index] = input_char;
+			++index;
+		}
 	}
 }
 

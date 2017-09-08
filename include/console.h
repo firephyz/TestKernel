@@ -6,6 +6,13 @@
 
 #define CONSOLE_WIDTH 80
 #define CONSOLE_HEIGHT 25
+#define CONSOLE_SIZE CONSOLE_HEIGHT * CONSOLE_WIDTH
+
+// Console state flags
+#define CONSOLE_NORMAL			0x00
+#define CONSOLE_IS_SCROLLING 	0x01
+#define CONSOLE_FREEZE_CURSOR 	0x02
+#define CONSOLE_IS_RESETING		0x04
 
 #define PRT_BASE_2		2
 #define PRT_BASE_8		8
@@ -13,7 +20,7 @@
 #define PRT_BASE_16		16
 
 #define VGA_COLOR(fg, bg) fg | (bg << 4)
-#define SET_VGA_ENTRY(character) system_out.color << 8 | character
+#define SET_VGA_ENTRY(character) stdout.color << 8 | character
 
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -39,6 +46,13 @@ struct console {
 	int8_t y_pos;
 	uint8_t color;
 	uint16_t * buffer;
+
+	// Max characters displayed could actually be less than CONSOLE_SIZE
+	// because of special characters like tab.
+	int char_index;
+	char char_buffer[CONSOLE_SIZE];
+
+	int state;
 };
 
 void console_init();
@@ -46,6 +60,7 @@ void console_clear_screen();
 void console_print_string(char * string);
 void console_print_int(int32_t num, int base);
 void console_putchar(char character);
+void console_check_bounds();
 
 static inline void console_move_cursor(int x, int y) {
 
@@ -55,18 +70,6 @@ static inline void console_move_cursor(int x, int y) {
 	outb(VGA_DATA_PORT, (uint8_t)(index & 0xFF));
 	outb(VGA_ADDRESS_PORT, VGA_CURSOR_LOC_HIGH);
 	outb(VGA_DATA_PORT, (uint8_t)((index >> 8) & 0xFF));
-}
-
-// Handle cursor updates
-static inline void console_check_bounds() {
-	if(system_out.x_pos == CONSOLE_WIDTH) {
-		system_out.x_pos = 0;
-		++system_out.y_pos;
-	}
-
-	if(system_out.y_pos == CONSOLE_HEIGHT) {
-		system_out.y_pos = 0;
-	}
 }
 
 #endif
