@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+// Various IO ports to be used
 #define KEYBOARD_DATA_PORT		0x60
 #define KEYBOARD_COMMAND_PORT	0x64
 #define PIC_MASTER_COMMAND_PORT	0x20

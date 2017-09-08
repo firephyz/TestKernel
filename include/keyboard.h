@@ -7,10 +7,12 @@
 #define CONTROL_CLEAR	0x0
 #define CONTROL_SHIFT	0x1
 
+#define KBD_BUFFER_SIZE 	32
+
 struct keyboard {
 	int start;
 	int end;
-	uint8_t buffer[256];
+	uint8_t buffer[KBD_BUFFER_SIZE];
 	uint8_t ctr_mask;
 };
 

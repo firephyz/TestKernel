@@ -41,8 +41,8 @@ SECTIONS
 	ALIGN_POINT = 512 * ((FINAL_ADDR / 512) + 1) - 1;
 	.end_byte : AT(ALIGN_POINT) { BYTE(0x0) }
 	
-	/*
-	// Used to make the disk compatable with Bochs
+	
+	/*// Used to make the disk compatable with Bochs
 	.test : AT(0x168000 - 1) { BYTE(0x5a) }
 	*/
 

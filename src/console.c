@@ -3,7 +3,13 @@
 #include <stdint.h>
 
 // Should only be used by internal printing functions
-static inline void console_write_char(char c);
+// Sets the character under the current cursor and does nothing else
+static inline void console_write_char(char c) {
+
+	int index = CONSOLE_WIDTH * system_out.y_pos + system_out.x_pos;
+	system_out.buffer[index] = SET_VGA_ENTRY(c);
+	return;
+}
 
 void console_init() {
 
@@ -115,7 +121,10 @@ void console_putchar(char character) {
 	}
 	else if (character == '\b') {
 
-		if(system_out.x_pos == 0) return;
+		if(system_out.x_pos == 0) {
+			--system_out.y_pos;
+			system_out.x_pos = CONSOLE_WIDTH;
+		}
 		
 		--system_out.x_pos;
 		console_write_char(' ');

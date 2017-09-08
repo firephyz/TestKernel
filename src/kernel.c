@@ -17,10 +17,6 @@ void kernel_start(void) {
 	console_init();
 	keyboard_init();
 
-	console_print_string("Number test: ");
-	console_print_int(0x17, PRT_BASE_10);
-	console_putchar('\n');
-
 	while (1) {
 		char c = getc();
 		console_putchar(c);

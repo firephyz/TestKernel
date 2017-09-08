@@ -57,14 +57,6 @@ static inline void console_move_cursor(int x, int y) {
 	outb(VGA_DATA_PORT, (uint8_t)((index >> 8) & 0xFF));
 }
 
-// Sets the character under the current cursor and does nothing else
-static inline void console_write_char(char c) {
-
-	int index = CONSOLE_WIDTH * system_out.y_pos + system_out.x_pos;
-	system_out.buffer[index] = SET_VGA_ENTRY(c);
-	return;
-}
-
 // Handle cursor updates
 static inline void console_check_bounds() {
 	if(system_out.x_pos == CONSOLE_WIDTH) {

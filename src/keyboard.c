@@ -46,12 +46,20 @@ void keyboard_init() {
 char getc() {
 
 	// Wait for next key event
+	getc_while_loop:
 	while(kbd.start == kbd.end) {}
+
+	// Very rarely, qemu will jump out the loop above when
+	// kbd.start and kbd.end are actually equal.
+	// If that happens, go back to the loop
+	if(kbd.start == kbd.end) {
+		goto getc_while_loop;
+	}
 
 	uint8_t result = kbd.buffer[kbd.start];
 
 	++kbd.start;
-	if(kbd.start == 256) {
+	if(kbd.start == KBD_BUFFER_SIZE) {
 		kbd.start = 0;
 	}
 
@@ -83,14 +91,14 @@ void handle_int_09() {
 	if(input < 0x80) {
 		// Check if buffer is already full
 		if(kbd.end == kbd.start - 1 ||
-			(kbd.start == 0 && kbd.end == 0xFF)) {
+			(kbd.start == 0 && kbd.end == KBD_BUFFER_SIZE - 1)) {
 			return;
 		}
 
 		kbd.buffer[kbd.end] = input;
 
 		kbd.end++;
-		if(kbd.end == 256) kbd.end = 0;
+		if(kbd.end == KBD_BUFFER_SIZE) kbd.end = 0;
 	}
 
 	// Send done signal to PIC
