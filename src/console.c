@@ -17,7 +17,7 @@ static inline void set_console_state(int value) {
 
 static inline void console_record_character(char character) {
 
-	if(character != '\b') {
+	if(character != '\b' && character != '\0') {
 		stdout.char_buffer[stdout.char_index] = character;
 		++stdout.char_index;
 		if(stdout.char_index == CONSOLE_SIZE) {
