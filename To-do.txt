@@ -1,0 +1,12 @@
+To-do List
+
+- Make changing of the console state flags easier
+- Make the interrupt handling system more coherent and 
+	organized. (Shouldn't be in kernel.c right?)
+- Implement a file system
+	- Probably should start a disk and device abstraction layer
+- Implement a shell
+- Make scrolling more efficient by not clearing the entire
+	screen but only that which must be cleared.
+- Finish implementing useful keyboard keys
+-  

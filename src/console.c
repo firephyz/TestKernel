@@ -233,21 +233,17 @@ void console_check_bounds() {
 		// Assuming the end of the characters will end with a null
 		// terminator. Let's hope that's true
 		++index;
-		while((stdout.char_buffer[index] != '\0')
-			&& (index < CONSOLE_SIZE)) {
+		while(index < stdout.char_index) {
 
 			stdout.char_buffer[index - newline_index] = stdout.char_buffer[index];
 			++index;
 		}
-		stdout.char_buffer[index - newline_index] = '\0';
+		stdout.char_index -= newline_index;
 
 		// Redraw the updated character buffer
 		console_clear_screen();
 		set_console_state(stdout.state | CONSOLE_FREEZE_CURSOR);
-		for(index = 0; index < CONSOLE_SIZE; ++index) {
-
-			if(stdout.char_buffer[index] == '\0') break;
-
+		for(index = 0; index < stdout.char_index; ++index) {
 			console_putchar(stdout.char_buffer[index]);
 		}
 		set_console_state(stdout.state & ~CONSOLE_FREEZE_CURSOR);
@@ -256,7 +252,6 @@ void console_check_bounds() {
 		// made room for and stop scrolling
 		stdout.x_pos = 0;
 		stdout.y_pos = 24;
-		stdout.char_index -= newline_index;
 		set_console_state(stdout.state & ~CONSOLE_IS_SCROLLING);
 	}
 }

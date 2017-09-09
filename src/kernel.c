@@ -46,8 +46,8 @@ void run_prompt() {
 		console_print_string(prompt_string);
 		get_input_command(input_string);
 
-		// console_print_string("\n => ");
-		// console_print_string(input_string);
+		//console_print_string("\n => ");
+		//console_print_string(input_string);
 		console_putchar('\n');
 	}
 }
