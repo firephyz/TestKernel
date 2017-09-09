@@ -80,7 +80,7 @@ void handle_int_09() {
 	// GCC for some reason is not acknowledging that inb
 	// and outb replace a register. Thus we must do the compiler's
 	// job and store those registers outselves
-	asm volatile ("push %eax");
+	//asm volatile ("push %eax");
 
 	uint8_t input = inb(KEYBOARD_DATA_PORT);
 
@@ -108,5 +108,5 @@ void handle_int_09() {
 	// Send done signal to PIC
 	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
 
-	asm volatile ("pop %eax");
+	//asm volatile ("pop %eax");
 }

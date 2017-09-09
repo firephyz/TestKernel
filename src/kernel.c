@@ -39,15 +39,16 @@ void kernel_start(void) {
 
 void run_prompt() {
 
-	char * prompt_string = " > ";
+	int prompt_length = strlen(stdout.prompt_string);
 	char input_string[MAX_COMMAND_LENGTH + 1];
 
 	while(1) {
-		console_print_string(prompt_string);
+		console_print_string(stdout.prompt_string);
+		stdout.line_index = prompt_length;
 		get_input_command(input_string);
 
-		//console_print_string("\n => ");
-		//console_print_string(input_string);
+		console_print_string("\n => ");
+		console_print_string(input_string);
 		console_putchar('\n');
 	}
 }
@@ -66,21 +67,66 @@ void get_input_command(char * string) {
 			string[index] = '\0';
 			return;
 		}
-		// Backspace is also special. Shouldn't store that in the command string
-		else if(input_char == '\b') {
-			// Don't let user back up into the prompt. That's bad.
-			if(index != 0) {
+
+		// Print the character we just typed
+		if(index >= 0) {
+			if(index > 0 || input_char != '\b') {
+				console_putchar(input_char);
+
+				// Print the special continuation line if we are past
+				// the width of the screen.
+				check_input_runoff(input_char);
+			}
+		}
+
+		// Now record the character in the command string
+		// Backspace is special. Shouldn't store that in the command string
+		if(input_char == '\b') {
+			// Don't let the user backup through the start of the string
+			if(index > 0) {
 				--index;
 				string[index] = '\0';
-				console_putchar(input_char);
+			}
+		}
+		else if(input_char == '\t') {
+			for(int i = 0; i < CONSOLE_TAB_SIZE; ++i) {
+				string[index] = ' ';
+				++index;
 			}
 		}
 		// Normal characters
 		else {
-			console_putchar(input_char);
 			string[index] = input_char;
 			++index;
 		}
+	}
+}
+
+void check_input_runoff(char input_char) {
+
+	// Update the line index
+	if(input_char == '\b') {
+		--stdout.line_index;
+
+		if(stdout.line_index < 3) {
+			stdout.line_index = CONSOLE_WIDTH - 1;
+
+			for(int i = 0; i < 3; ++i) {
+				console_putchar(input_char);
+			}
+		}
+	}
+	else if(input_char == '\t') {
+		stdout.line_index += 4;
+	}
+	else {
+		++stdout.line_index;
+	}
+
+	// Use line index to check if we ran off the edge
+	if(stdout.line_index - CONSOLE_WIDTH >= 0) {
+		console_print_string(" | ");
+		stdout.line_index = 3;
 	}
 }
 

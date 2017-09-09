@@ -14,6 +14,8 @@
 #define CONSOLE_FREEZE_CURSOR 	0x02
 #define CONSOLE_IS_RESETING		0x04
 
+#define CONSOLE_TAB_SIZE	4
+
 #define PRT_BASE_2		2
 #define PRT_BASE_8		8
 #define PRT_BASE_10		10
@@ -51,6 +53,9 @@ struct console {
 	// because of special characters like tab.
 	int char_index;
 	char char_buffer[CONSOLE_SIZE];
+
+	char * prompt_string;
+	int line_index; // Used to identify when the input line runs off the edge of the screen
 
 	int state;
 };

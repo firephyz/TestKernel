@@ -17,11 +17,19 @@ static inline void set_console_state(int value) {
 
 static inline void console_record_character(char character) {
 
-	if(character != '\b' && character != '\0') {
-		stdout.char_buffer[stdout.char_index] = character;
-		++stdout.char_index;
-		if(stdout.char_index == CONSOLE_SIZE) {
-			stdout.char_index = 0;
+	if(character == '\t') {
+		for(int i = 0; i < CONSOLE_TAB_SIZE; ++i) {
+			stdout.char_buffer[stdout.char_index] = ' ';
+			++stdout.char_index;
+		}
+	}
+	else {
+		if(character != '\b' && character != '\0') {
+			stdout.char_buffer[stdout.char_index] = character;
+			++stdout.char_index;
+			if(stdout.char_index == CONSOLE_SIZE) {
+				stdout.char_index = 0;
+			}
 		}
 	}
 }
@@ -33,6 +41,9 @@ void console_init() {
 	stdout.color = VGA_COLOR(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 	stdout.buffer = (uint16_t *)0xB8000;
 	stdout.char_index = 0;
+
+	stdout.prompt_string = " > ";
+	stdout.line_index = strlen(stdout.prompt_string);
 
 	set_console_state(stdout.state | CONSOLE_IS_RESETING);
 	console_clear_screen();
@@ -164,10 +175,11 @@ void console_putchar(char character) {
 		}
 		
 		--stdout.x_pos;
+		--stdout.char_index;
 		console_write_char(' ');
 	}
 	else if (character == '\t') {
-		stdout.x_pos += 4;
+		stdout.x_pos += CONSOLE_TAB_SIZE;
 
 		console_check_bounds();
 	}
@@ -251,7 +263,7 @@ void console_check_bounds() {
 		// Reset console variables to the new line at the bottom we just
 		// made room for and stop scrolling
 		stdout.x_pos = 0;
-		stdout.y_pos = 24;
+		stdout.y_pos = CONSOLE_HEIGHT - 1;
 		set_console_state(stdout.state & ~CONSOLE_IS_SCROLLING);
 	}
 }

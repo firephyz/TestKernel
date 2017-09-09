@@ -6,7 +6,11 @@ To-do List
 - Implement a file system
 	- Probably should start a disk and device abstraction layer
 - Implement a shell
+	- Allow user to move cursor and enter text in the middle of his input
 - Make scrolling more efficient by not clearing the entire
 	screen but only that which must be cleared.
 - Finish implementing useful keyboard keys
--  
+- Didn't add check in prompt for handling a tab when the screen is almost full.
+	Must do that at some point.
+- Also must fix console behavior when the user types a tab near the end
+	of the screen forcing the command to continue on the next line below.

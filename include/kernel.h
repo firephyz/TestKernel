@@ -58,6 +58,7 @@ struct idt_ptr_t {
 void kernel_start(void);
 void run_prompt();
 void get_input_command(char * string);
+void check_input_runoff(char input);
 
 size_t strlen(char * string);
 

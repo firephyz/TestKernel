@@ -1,4 +1,4 @@
-PATH:=$(HOME)/gcc/cross/bin:$(PATH)
+PATH:=$(HOME)/programs/cross/bin:$(PATH)
 DIR:=$(shell pwd)
 TARGET=i686-elf
 DEBUG=-g
