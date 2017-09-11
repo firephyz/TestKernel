@@ -45,7 +45,8 @@ SECTIONS
 									 build/* (.text)
 									 build/* (.data)
 									 build/* (.rodata)}
-
+									 
+	FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);
 	.end_byte : AT(66048 - 1) { BYTE(0x00) }
 
 	/* Make output binary a size multiple of 512 */

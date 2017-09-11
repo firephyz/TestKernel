@@ -111,6 +111,17 @@ _move_os_loop:
 	cmp $OS_SECTOR_LENGTH, %dx
 	jne _move_os_loop
 
+	// Init the PIT
+	// Tell PIT what command we are doing
+	mov $0x34, %al // Channel 0, lobyte/hibyte, rate generator
+	out %al, $0x43
+
+	// Set the PIT reload value
+	mov $11932, %ax // 10ms delay
+	out %al, $0x40
+	mov %ah, %al
+	out %al, $0x40
+
 	// Init the PIC
 	OUTBYTE $0x20, $0x11
 	OUTBYTE $0xA0, $0x11
@@ -124,8 +135,8 @@ _move_os_loop:
 	OUTBYTE $0x21, $0x05
 	OUTBYTE $0xA1, $0x01
 
-	// Only enable IRQ 0
-	OUTBYTE $0x21, $0xFD
+	// Only enable IRQ 0 and IRQ 1
+	OUTBYTE $0x21, $0xFC
 	OUTBYTE $0xA1, $0xFF
 
 	xor %eax, %eax
@@ -166,6 +177,11 @@ _gdt:
  **********************/
 
 .section .idt_handlers, "ax"
+
+.global _interrupt_00
+_interrupt_00:
+	call handle_int_00
+	iret
 
 .global _interrupt_09
 _interrupt_09:

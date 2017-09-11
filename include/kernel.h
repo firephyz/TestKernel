@@ -21,6 +21,34 @@
 // End of interrupt signal for the PIC
 #define PIC_EOI				0x20
 
+// PIT Timer Ports
+// Info from OSDev http://wiki.osdev.org/PIT
+// Command Port Bit Info
+// [7:6] Channel Select
+// 	- 00 Channel 0
+//  - 01 Channel 1
+// 	- 10 Channel 2
+// 	- 11 Read-back Command
+// [5:4] Access Mode
+//	- 00 Latch Count Value Command
+//	- 01 Access mode: lobyte only
+// 	- 10 Access mode: hibyte only
+//	- 11 Access mode: lobyte/hibyte
+// [3:1] Operating Mode
+//	- 000 Interrupt on terminal count
+// 	- 001 Hardware re-triggerable one-shot
+//	- 010 Rate generator
+//	- 011 Square wave generator
+//	- 100 Software triggered strobe
+//	- 101 Hardware triggered strobe
+//	- 110 Rate generator (same as 010)
+//	- 111 Sqaure wave generator (same as 011)
+// [0] BCD/Binary Mode
+// 	- 0 16-bit binary
+//	- 1 4-digit BCD
+#define PIT_CHANNEL_0_PORT	0x40
+#define PIT_COMMAND_PORT 	0x43
+
 // IRQ's as set in boot.s
 #define IRQ_PIT			0x20
 #define IRQ_KEYBOARD	0x21
@@ -37,6 +65,7 @@
 #define MAX_COMMAND_LENGTH 1024
 
 // External hooks to boot.s
+extern void * _interrupt_00;
 extern void * _interrupt_09;
 extern void * _interrupt_xx;
 extern uint32_t CODE_SELECTOR;
@@ -56,11 +85,14 @@ struct idt_ptr_t {
 
 // Kernel start point
 void kernel_start(void);
+void kprint(char * string);
 void run_prompt();
 void get_input_command(char * string);
 void check_input_runoff(char input);
 
 size_t strlen(char * string);
+
+void handle_int_00();
 
 // Functions for handling the idt and generic interrupts
 struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset);

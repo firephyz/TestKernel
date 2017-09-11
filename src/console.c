@@ -56,6 +56,8 @@ void console_init() {
 	stdout.y_pos = 0;
 	console_move_cursor(0, 0);
 	set_console_state(stdout.state & ~CONSOLE_IS_RESETING);
+
+	kprint("Text console initialized.");
 }
 
 void console_clear_screen() {

@@ -45,6 +45,8 @@ void keyboard_init() {
 	kbd.start = 0;
 	kbd.end = 0;
 	kbd.ctr_mask = CONTROL_CLEAR;
+
+	kprint("Keyboard init complete.");
 }
 
 char getc() {

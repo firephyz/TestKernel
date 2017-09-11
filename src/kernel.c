@@ -1,6 +1,7 @@
 #include "kernel.h"
 #include "console.h"
 #include "keyboard.h"
+#include "pci_ide.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -8,13 +9,17 @@ struct idt_ptr_t idt_ptr ;
 struct console stdout;
 struct keyboard kbd;
 struct idt_descriptor idt_table[256] __attribute__((aligned (8)));
+struct ide_driver_data ide_data;
 
 // Must put in own section so that it is loaded at the OS_ENTRY point
 __attribute__((section (".os_entry")))
 void kernel_start(void) {
 
-	fill_idt_table();
+	// Init console soon to get debug output
 	console_init();
+
+	fill_idt_table();
+	pci_ide_init();
 	keyboard_init();
 
 	// Print the welcome message.
@@ -46,9 +51,6 @@ void run_prompt() {
 		console_print_string(stdout.prompt_string);
 		stdout.line_index = prompt_length;
 		get_input_command(input_string);
-
-		console_print_string("\n => ");
-		console_print_string(input_string);
 		console_putchar('\n');
 	}
 }
@@ -130,6 +132,16 @@ void check_input_runoff(char input_char) {
 	}
 }
 
+// Very simple printing wrapper for reporting kernel events
+void kprint(char * string) {
+
+	static char * k_string_starter = " <KERNEL> : ";
+	console_print_string(k_string_starter);
+	console_print_string(string);
+	console_putchar('\n');
+}
+
+
 void fill_idt_table() {
 
 	idt_ptr.limit = sizeof(struct idt_descriptor) * 256 - 1;
@@ -139,6 +151,9 @@ void fill_idt_table() {
 		if(i == IRQ_KEYBOARD) {
 			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&_interrupt_09);
 		}
+		else if(i == IRQ_PIT) {
+			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&_interrupt_00);
+		}
 		else {
 			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&_interrupt_xx);
 		}
@@ -147,6 +162,8 @@ void fill_idt_table() {
 	// Load the new table just made
 	asm("lidt idt_ptr\n"
 		"sti\n");
+
+	kprint("IDT Table setup complete.");
 }
 
 struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset) {
@@ -155,6 +172,15 @@ struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset) {
 	uint32_t second_word = (offset & 0xFFFF0000) | 0x8F00;
 
 	return (struct idt_descriptor){first_word, second_word};
+}
+
+// PIT Timer Handler
+void handle_int_00() {
+
+	// Do some cool time related stuff here
+
+	// Send done signal to PIC
+	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
 }
 
 void handle_int_xx() {

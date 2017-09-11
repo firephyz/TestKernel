@@ -24,4 +24,4 @@ qemu-system-i386 $DEBUG																\
                  -boot d                              								\
                  -name "Lisp VM"                      								\
                  -bios /home/firephyz/src/seabios/out/bios.bin 						\
-                 -chardev stdio,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios
+                 -monitor stdio
