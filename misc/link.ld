@@ -16,14 +16,14 @@ SECTIONS
 	.text 	: AT(0) 				{ build/boot.o (.text) }
 	.data 	: AT(SIZEOF(.text)) 	{ build/boot.o (.data) }
 	.system_id : AT(0x1B8)			{ LONG(0x7073694c) }
-	.mbr	: AT(0x1BE)				{ BYTE(0x80)
-									  BYTE(0x00)
-									  SHORT(0x0002)
-									  BYTE(0x0B)
-									  BYTE(0x00)
-									  SHORT(0x00C3)
-									  LONG(0x0000001)
-									  LONG(0x00000080)
+	.mbr	: AT(0x1BE)				{ BYTE(0x80)		/* Bootable */
+									  BYTE(0x00)		/* Starting head */
+									  SHORT(0x0002)		/* {[7:6],[15:8]} Starting cylinder, [5:0] Starting sector */
+									  BYTE(0x0C)		/* Fat32 (LBA) */
+									  BYTE(0x00)		/* Ending head */
+									  SHORT(0x0083)		/* {[7:6],[15:8]} Ending cylinder, [5:0] Ending sector */
+									  LONG(0x0000001)	/* Parition's starting LBA value */
+									  LONG(0x00000080)	/* Total sectors in partition */
 									}
 	.magic 	: AT(0x1FE) 			{ SHORT(0xAA55) }
 
@@ -46,7 +46,7 @@ SECTIONS
 									 build/* (.data)
 									 build/* (.rodata)}
 
-	.end_byte : AT(66048 - 1) { BYTE(0x5a) }
+	.end_byte : AT(66048 - 1) { BYTE(0x00) }
 
 	/* Make output binary a size multiple of 512 */
 	/*FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);

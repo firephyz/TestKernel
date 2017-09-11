@@ -40,23 +40,6 @@ _start:
 	ljmpl $CODE_SELECTOR, $_protected_mode
 
 _enable_A20:
-	xor %ax, %ax
-	mov %ax, %es
-	mov $0x08, %ah
-	mov $0x80, %dl
-	mov $0x0000, %di
-	int $0x13
-
-	xor %ax, %ax
-	mov %ax, %es
-	mov $0x7e00, %bx
-	mov $0x0201, %ax
-	mov $0x02, %ch // cylinder
-	mov $3, %cl // sector
-	mov $0x00, %dh // head
-	mov $0x80, %dl
-	int $0x13
-
 	ret
 
 _load_os:

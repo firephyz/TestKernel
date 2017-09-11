@@ -14,3 +14,5 @@ To-do List
 	Must do that at some point.
 - Also must fix console behavior when the user types a tab near the end
 	of the screen forcing the command to continue on the next line below.
+- Implement actual disk geometry checking in the bootloader so that we
+	can load an OS taking up more than 62 sectors.
