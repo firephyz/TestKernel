@@ -16,3 +16,21 @@ To-do List
 	of the screen forcing the command to continue on the next line below.
 - Implement actual disk geometry checking in the bootloader so that we
 	can load an OS taking up more than 62 sectors.
+
+
+- Create an OS
+	- Use C
+		- Enter protected mode
+			- Create GDT Table
+			- Set PE flag in CR0 register
+		- Have a good stack setup
+	- Create a stable console
+		- Have keyboard input
+			- Enable interrupts
+				- Setup the IRQ table
+			- Have a working handler
+		- Control VGA Text mode well
+	- Have a filesytem
+		- Working disk driver
+			- TBA
+		- TBA

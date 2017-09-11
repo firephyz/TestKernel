@@ -15,6 +15,7 @@ SECTIONS
 	. = LOAD_ADDRESS;
 	.text 	: AT(0) 				{ build/boot.o (.text) }
 	.data 	: AT(SIZEOF(.text)) 	{ build/boot.o (.data) }
+	.code_limit : AT(0x1B4)			{ BYTE(0x0) } 		/* Will cause a linker error if bootloader code gets too large */
 	.system_id : AT(0x1B8)			{ LONG(0x7073694c) }
 	.mbr	: AT(0x1BE)				{ BYTE(0x80)		/* Bootable */
 									  BYTE(0x00)		/* Starting head */
@@ -45,7 +46,7 @@ SECTIONS
 									 build/* (.text)
 									 build/* (.data)
 									 build/* (.rodata)}
-									 
+
 	FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);
 	.end_byte : AT(66048 - 1) { BYTE(0x00) }
 

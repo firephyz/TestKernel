@@ -17,10 +17,12 @@ void kernel_start(void) {
 
 	// Init console soon to get debug output
 	console_init();
-
-	fill_idt_table();
 	pci_ide_init();
 	keyboard_init();
+
+	// Only enable interrupts once all init is complete.
+	// Will probably change this later.
+	fill_idt_table();
 
 	// Print the welcome message.
 	char * welcome = "\n\

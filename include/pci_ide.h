@@ -77,6 +77,8 @@ struct ide_driver_data {
 	uint8_t 	nirq; // No Interrupt
 };
 
+extern struct ide_driver_data ide_data;
+
 void pci_ide_init();
 
 #endif
