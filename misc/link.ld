@@ -15,6 +15,16 @@ SECTIONS
 	. = LOAD_ADDRESS;
 	.text 	: AT(0) 				{ build/boot.o (.text) }
 	.data 	: AT(SIZEOF(.text)) 	{ build/boot.o (.data) }
+	.system_id : AT(0x1B8)			{ LONG(0x7073694c) }
+	.mbr	: AT(0x1BE)				{ BYTE(0x80)
+									  BYTE(0x00)
+									  SHORT(0x0002)
+									  BYTE(0x0B)
+									  BYTE(0x00)
+									  SHORT(0x00C3)
+									  LONG(0x0000001)
+									  LONG(0x00000080)
+									}
 	.magic 	: AT(0x1FE) 			{ SHORT(0xAA55) }
 
 	/***************
@@ -36,10 +46,12 @@ SECTIONS
 									 build/* (.data)
 									 build/* (.rodata)}
 
+	.end_byte : AT(66048 - 1) { BYTE(0x5a) }
+
 	/* Make output binary a size multiple of 512 */
-	FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);
+	/*FINAL_ADDR = OS_LOAD_ADDR + SIZEOF(.os_loaded);
 	ALIGN_POINT = 512 * ((FINAL_ADDR / 512) + 1) - 1;
-	.end_byte : AT(ALIGN_POINT) { BYTE(0x0) }
+	.end_byte : AT(ALIGN_POINT) { BYTE(0x0) }*/
 	
 	
 	/*// Used to make the disk compatable with Bochs
