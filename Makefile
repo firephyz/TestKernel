@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 PATH:=$(HOME)/programs/cross/bin:$(PATH)
 DIR:=$(shell pwd)
 TARGET=i686-elf
