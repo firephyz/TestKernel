@@ -5,11 +5,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-struct idt_ptr_t idt_ptr ;
 struct console stdout;
 struct keyboard kbd;
+struct idt_ptr_t idt_ptr;
 struct idt_descriptor idt_table[256] __attribute__((aligned (8)));
-struct ide_driver_data ide_data;
 
 // Must put in own section so that it is loaded at the OS_ENTRY point
 __attribute__((section (".os_entry")))
@@ -17,12 +16,12 @@ void kernel_start(void) {
 
 	// Init console soon to get debug output
 	console_init();
-	pci_ide_init();
-	keyboard_init();
+	//init_bridge();
+	//keyboard_init();
 
 	// Only enable interrupts once all init is complete.
 	// Will probably change this later.
-	fill_idt_table();
+	//fill_idt_table();
 
 	// Print the welcome message.
 	char * welcome = "\n\
@@ -151,13 +150,13 @@ void fill_idt_table() {
 
 	for(int i = 0; i < 256; ++i) {
 		if(i == IRQ_KEYBOARD) {
-			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&_interrupt_09);
+			idt_table[i] = create_idt_entry((int)0x08, (uint32_t)&_interrupt_09);
 		}
 		else if(i == IRQ_PIT) {
-			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&_interrupt_00);
+			idt_table[i] = create_idt_entry((int)0x08, (uint32_t)&_interrupt_00);
 		}
 		else {
-			idt_table[i] = create_idt_entry((int)&CODE_SELECTOR, (uint32_t)&_interrupt_xx);
+			idt_table[i] = create_idt_entry((int)0x08, (uint32_t)&_interrupt_xx);
 		}
 	}
 

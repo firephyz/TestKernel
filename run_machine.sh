@@ -7,7 +7,7 @@ if [ "$1" = "-debug" ]; then
 fi
 
 if [ ! -z "$DEBUG" ]; then
-	konsole -e bash -c 'cd ~/dev/kernel && gdb -iex "source misc/debug.gdbinit"'
+	konsole -e bash -c 'cd ~/dev/kernel/test && gdb -iex "source misc/debug.gdbinit"'
 fi
 
 # Qemu's disk geometry detection is very strange. Will manually specify for now. Also, the cylinders
@@ -16,12 +16,12 @@ fi
 # chs (2, 0, 3) is the last sector. (63 - 1) + 63 + 3.
 # Option to add if we want seabios to output debug info.
 # -chardev stdio,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios
+# -bios /home/firephyz/src/seabios/out/bios.bin # Custom built bios for testing
 qemu-system-i386 $DEBUG																\
 				 -enable-kvm                          								\
-                 -drive file=./boot.bin,if=ide,format=raw,cyls=5,heads=1,secs=63	\
+                 -drive file=./boot.bin,if=ide,format=raw,cyls=1,heads=1,secs=15	\
                  -vga std                             								\
                  -m 1024M                             								\
                  -boot d                              								\
                  -name "Lisp VM"                      								\
-                 -bios /home/firephyz/src/seabios/out/bios.bin 						\
                  -monitor stdio

@@ -69,6 +69,8 @@ char getc() {
 		kbd.start = 0;
 	}
 
+	//console_print_int(result, PRT_BASE_16);
+
 	// Return shift keys if we must
 	if(kbd.ctr_mask & CONTROL_SHIFT) {
 		return key_codes_shift[result];
@@ -109,6 +111,9 @@ void handle_int_09() {
 
 	// Send done signal to PIC
 	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
+
+	//console_putchar('[');
+	//console_print_int(kbd.end, PRT_BASE_10);
 
 	//asm volatile ("pop %eax");
 }

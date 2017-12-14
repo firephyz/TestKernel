@@ -68,7 +68,7 @@
 extern void * _interrupt_00;
 extern void * _interrupt_09;
 extern void * _interrupt_xx;
-extern uint32_t CODE_SELECTOR;
+//extern uint32_t CODE_SELECTOR;
 
 extern struct keyboard kbd;
 extern struct console stdout;
@@ -103,17 +103,52 @@ void handle_int_xx();
 static inline uint8_t inb(uint16_t port) {
 
 	uint8_t result = 0;
-	asm volatile ("in %%dx, %%al"
+	asm volatile ("in %1, %0"
 		: "=a" (result)
-		: "d" (port));
+		: "dN" (port));
 	return result;
 }
 
 static inline void outb(uint16_t port, uint8_t value) {
 
-	asm volatile ("out %%al, %%dx"
+	asm volatile ("out %1, %0"
 		:
-		: "d" (port), "a" (value));
+		: "dN" (port), "a" (value));
+	return;
+}
+
+static inline uint16_t inw(uint16_t port) {
+
+	uint16_t result = 0;
+	asm volatile ("inw %1, %0"
+		: "=a" (result)
+		: "dN" (port));
+	return result;
+}
+
+static inline void outw(uint16_t port, uint16_t value) {
+
+	asm volatile ("outw %1, %0"
+		:
+		: "dN" (port), "a" (value));
+	return;
+}
+
+
+static inline uint32_t inl(uint16_t port) {
+
+	uint32_t result = 0;
+	asm volatile("inl %1, %0"
+		: "=a" (result)
+		: "dN" (port));
+	return result;
+}
+
+static inline void outl(uint16_t port, uint32_t value) {
+
+	asm volatile ("out %1, %0"
+		:
+		: "dN" (port), "a" (value));
 	return;
 }
 

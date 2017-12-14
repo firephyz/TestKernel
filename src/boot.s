@@ -1,176 +1,414 @@
-.set GDT_DESC_LIMIT, 4
-.set CODE_SELECTOR, 0x08
-.set DATA_SELECTOR, 0x10
-.set OS_TEMP_BUFFER, 0x7E00
-.set MAX_SECTOR_LOAD, 128
-.set LOAD_ADDRESS, 0x7C00
-.set OS_ENTRY, 0x100000
-
-// Make these variables available to C files
-.global LOAD_ADDRESS
-.global OS_ENTRY
-.global CODE_SELECTOR
-
 .code16
+.global BOOT_LOAD_ADDR
+.set BOOT_LOAD_ADDR,	0x7C00
+
+.set STACK_TOP, 		BOOT_LOAD_ADDR
+.set BOOT_DRIVE, 		STACK_TOP - 2
+.set DRIVE_PARAMS,		BOOT_DRIVE - 4 // 4 Bytes. First two hold [heads, sectors], last two hold [cylinders]
 
 .text
-_start:
+.global _boot_start
+_boot_start:
 	cli
 
 	// Make sure the data register and stack are set correctly
-	xor %eax, %eax
+	xor %ax, %ax
 	mov %ax, %ds
 	mov %ax, %es
-	mov $0x7C00, %esp
+	mov %ax, %ss
 
-	// Enable the A20 line
-	call _enable_A20
+	lea STACK_TOP, %sp
+	push %dx // Save boot drive number
+	sub $0x4, %sp // Reserve space for the drive_params structure
 
-	// Load the OS into memory
+	call _get_drive_params
+
+	call _load_boot_loader
+
+	call _enable_a20
+
 	call _load_os
 
-	lgdtl _gdt_desc
+	// Haven't set up the IDT yet so having hardware interrupts
+	// would cause triple faults. Not good.
+	call _disable_hardware_irqs
 
-	// Set the PE flag bit and enter into 32 bit protected mode!
+	// Enter protected mode
+	lgdtl _gdt_desc
 	movl %cr0, %eax
 	orl $0x01, %eax
 	movl %eax, %cr0
 
-	// Must far jump to fill CS with the new GDT data
-	ljmpl $CODE_SELECTOR, $_protected_mode
+	// Execute far jump to load new segment registers from gdt
+	ljmpl $0x08, $_os_boot
 
-_enable_A20:
+_get_drive_params:
+	// Get drive parameters
+	mov BOOT_DRIVE, %dl
+	xor %di, %di
+	mov $0x08, %ah
+	int $0x13
+	jc _get_drive_params_failed
+	xor %ax, %ax
+	mov %ax, %es
+
+	// Store the params on the stack for later use
+	mov %dh, DRIVE_PARAMS // dh has max head number
+	mov %ch, %dl
+	mov %cl, %dh
+	shr $6, %dh // dx holds max cylinder number
+	mov %dx, DRIVE_PARAMS + 2
+	and $0x3F, %cl // Extract max sector number
+	mov %cl, DRIVE_PARAMS + 1
+
 	ret
 
-_load_os:
-	push %ebx
-	push %di
+.set BOOT_CONTINUED,		0x7E00 // Address for the remaining bootloader code
+.global BOOT_CONTINUED
+_load_boot_loader:
+	mov %sp, %bp
 
-	// Reset the disk
-	mov $0x00, %ah
-	mov $0x80, %dl
+	// Read a sector from memory
+	mov $0x0201, %ax
+	mov $2, %cl // Grab second sector of boot loader
+	mov $0x00, %ch
+	xor %dx, %dx
+	mov BOOT_DRIVE, %dl
+	lea BOOT_CONTINUED, %bx
 	int $0x13
+	jc _get_drive_params_failed
 
-	mov $0, %di
-	mov $0x0002, %cx // Start reading from the second sector
-	mov $OS_TEMP_BUFFER, %bx // Buffer is at 0x7E00
-	mov $0x0080, %dx // Head 0 and drive 80 (hard drive)
-
-_load_os_loop:
-	// Fetch a sector from the disk
-	mov $0x0201, %ax // Read and get 1 sector
-	int $0x13
-	add $1, %di
-	add $1, %cx
-	add $512, %bx
-	cmp $MAX_SECTOR_LOAD, %di
-	je _os_too_large
-	cmp $OS_SECTOR_LENGTH, %di
-	jne _load_os_loop
-
-	pop %di
-	pop %ebx
 	ret
 
-_os_too_large:
-	hlt
-	jmp -2
+_check_a20:
+	push %ds
+	// Attempt to fetch MBR magic number at 0x7DFE but do so a megabyte later.
+	// If a20 isn't enabled, it will wrap making address 0x7DFE will be the same as address 0x107DFE
+	// Otherwise, the two address will refer to different physical locations
+	mov $0xFFFF, %ax
+	mov %ax, %ds
+	mov 0x7E0E, %ax
+	cmp $0xAA55, %ax
+	jne _check_a20_yes_done // They aren't equal so address space doesn't wrap. A20 is enabled
 
-/******************************
- * 32 bit protected mode code *
- ******************************/
+	// The two are equal. Likely wrapping but it could be a coincidence.
+	// Change the magic number and try again.
+	xor %ax, %ax
+	mov %ax, %ds
+	movw $0x1234, 0x7DFE
+	// Fetch that value again
+	mov $0xFFFF, %ax
+	mov %ax, %ds
+	mov 0x7E0E, %ax
+	cmp $0x1234, %ax
+	jne _check_a20_yes_done // They actually aren't equal afterall. A20 is enabled
 
-.macro OUTBYTE port, value
-	mov \value, %al
-	out %al, \port
-.endm
+	// They are equal again, the A20 isn't enabled
+	mov $0, %ax
+	jmp _check_a20_ret
 
-.code32
-_protected_mode:
+_check_a20_yes_done:
+	mov $1, %ax
 
-	// Init the segment registers
-	movw $DATA_SELECTOR, %ax
+_check_a20_ret:
+	xor %dx, %dx // Restore the original magic number
+	mov %dx, %ds
+	movw $0xAA55, 0x7DFE
+	pop %ds
+	ret
+	
+_enable_a20:
+	call _check_a20
+	cmp $1, %ax
+	je _enable_a20_ret
+
+	inb	$0x92
+	and $(~0x03), %al
+	or	$0x02, %al
+	outb $0x92
+
+	call _check_a20
+	cmp $1, %ax
+	jne _enable_a20_failed
+
+_enable_a20_ret:
+	ret
+
+_disable_hardware_irqs:
+	mov $0xFF, %al
+	out %al, $0x21
+	out %al, $0xA1
+	ret
+
+.code32 // Jump here once we enter protected mode
+_os_boot:
+	lea STACK_TOP, %esp // Don't need the old stack anymore
+
+	// Init segment registers for 32 bit mode
+	movw $0x10, %ax
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
 	mov %ax, %ss
 
-	// Set the source and dest registers. These will automatically
-	// increment and be ready for the next loop if need be
-	mov $OS_ENTRY, %edi
-	mov $OS_TEMP_BUFFER, %esi
-	mov $0, %dx
-
-_move_os_loop:
-	// Move OS code to where it needs to go
-	mov $128, %cx
-	rep
-	movsd
-	add $1, %dx
-	cmp $OS_SECTOR_LENGTH, %dx
-	jne _move_os_loop
-
-	// Init the PIT
-	// Tell PIT what command we are doing
-	mov $0x34, %al // Channel 0, lobyte/hibyte, rate generator
-	out %al, $0x43
-
-	// Set the PIT reload value
-	mov $11932, %ax // 10ms delay
-	out %al, $0x40
-	mov %ah, %al
-	out %al, $0x40
-
-	// Init the PIC
-	OUTBYTE $0x20, $0x11
-	OUTBYTE $0xA0, $0x11
-
-	OUTBYTE $0x21, $0x20
-	OUTBYTE $0xA1, $0x28
-
-	OUTBYTE $0x21, $0x04
-	OUTBYTE $0xA1, $0x02
-
-	OUTBYTE $0x21, $0x05
-	OUTBYTE $0xA1, $0x01
-
-	// Only enable IRQ 0 and IRQ 1
-	OUTBYTE $0x21, $0xFC
-	OUTBYTE $0xA1, $0xFF
-
-	xor %eax, %eax
-	mov %eax, %ebx
-	mov %eax, %ecx
-	mov %eax, %edx
-	mov %eax, %esi
-	mov %eax, %edi
+	// Call main OS
 	call OS_ENTRY
 
 	hlt
 	jmp -2
+.code16
+
+/*********************
+ * Failure functions *
+ *********************/
+
+_load_os_failed:
+	lea _load_os_failed_string, %ax
+	mov $0xC7, %bl
+	mov $18, %cx
+	mov $0x0000, %dx
+	call _print_string
+	jmp _boot_failed
+
+_load_boot_loader_failed:
+	lea _load_boot_loader_failed_string, %ax
+	mov $0xC7, %bl
+	mov $33, %cx
+	mov $0x0000, %dx
+	call _print_string
+	jmp _boot_failed
+
+_get_drive_params_failed:
+	lea _get_drive_params_failed_string, %ax
+	mov $0xC7, %bl
+	mov $20, %cx
+	mov $0x0000, %dx
+	call _print_string
+	jmp _boot_failed
+
+_enable_a20_failed:
+	hlt
+	jmp -2
+	lea _a20_failed_string, %ax
+	mov $0xC7, %bl
+	mov $11, %cx
+	mov $0x0000, %dx
+	call _print_string
+	jmp _boot_failed
+
+_boot_failed:
+	hlt
+	jmp -2
+
+	// @ax address of string
+	// @bl color attribute
+	// @es segment for string
+	// @cx length of string
+	// @dx row, column
+_print_string:
+	push %bx
+	mov %ax, %bp
+	mov $0x00, %bh
+	mov $0x1301, %ax
+	int $0x10
+	pop %bx
+	ret
+
+.data
+_a20_failed_string:
+	.ascii "A20 failed."
+_get_drive_params_failed_string:
+	.ascii "Drive params failed."
+_load_os_failed_string:
+	.ascii "OS loading failed."
+_load_boot_loader_failed_string:
+	.ascii "Bootloader-2 loading failed."
+
+/*****************************
+ * Part 2 of the boot loader *
+ *****************************/
+
+.section .boot_cont, "ax"
+
+.global OS_ENTRY
+
+.set OS_ENTRY, 0x100000
+.set OS_LOAD_BUF, 	0x8000
+.set OS_ENTRY_OFFSET, OS_ENTRY - 0xFFFF0 // Offset for OS_ENTRY with 0xFFFF segment
+.set OS_START_SECTOR, 3 // Start with 3rd sector on disk
+_load_os:
+	mov %sp, %bp
+	mov $OS_START_SECTOR, %ax
+	push %ax // Space for current sector load index
+
+_load_os_loop:
+	// Read a sector from memory
+	mov $0x0201, %ax
+	mov -2(%bp), %cx
+	mov $0x00, %ch
+	xor %dx, %dx
+	mov BOOT_DRIVE, %dl
+	lea OS_LOAD_BUF, %bx
+	int $0x13
+
+	jc _load_os_failed
+
+	mov $0xFFFF, %ax // Init es register for repmov instruction
+	mov %ax, %es
+	lea OS_LOAD_BUF, %si
+	mov -2(%bp), %bx
+	sub $OS_START_SECTOR, %bx
+	imul $512, %bx
+	lea OS_ENTRY_OFFSET(%bx), %di
+	mov $128, %cx // 512 bytes in a sector. 128 dword moves
+	rep
+	movsl
+
+	xor %ax, %ax // Reset es register
+	mov %ax, %es
+
+	// Check and see if we have more sectors to read
+	incw -2(%bp)
+	mov -2(%bp), %dx
+	sub $OS_START_SECTOR, %dx
+	cmp $OS_SECTOR_COUNT, %dx
+	jne _load_os_loop
+
+	pop %ax
+	ret
+
+_print_registers:
+	push %sp
+	push %bp
+	mov %sp, %bp
+	add $4, %bp
+	push %ax
+	push %bx
+	push %cx
+	push %dx
+	push %si
+	push %di
+
+	mov -6(%bp), %dx
+	mov $0x0002, %cx
+	call _draw_number
+
+	mov -8(%bp), %dx
+	mov $0x0003, %cx
+	call _draw_number
+
+	mov -10(%bp), %dx
+	mov $0x0004, %cx
+	call _draw_number
+
+	mov -12(%bp), %dx
+	mov $0x0005, %cx
+	call _draw_number
+
+	mov -14(%bp), %dx
+	mov $0x0006, %cx
+	call _draw_number
+
+	mov -16(%bp), %dx
+	mov $0x0007, %cx
+	call _draw_number
+
+	mov -2(%bp), %dx
+	mov $0x0008, %cx
+	call _draw_number
+
+	mov -4(%bp), %dx
+	mov $0x0009, %cx
+	call _draw_number
+
+	add $12, %sp
+	pop %bp
+	pop %sp
+	ret
+
+	// @dx number
+	// @cx column, row
+_draw_number:
+	push %bp
+
+	mov %sp, %bp
+	push %cx
+	push %dx
+	xor %si, %si
+	push %si
+
+	mov -4(%bp), %ax
+	cmp $0, %ax
+	je _draw_number_done
+
+_draw_number_loop:
+	and $0x8000, %ax
+	jz _draw_number_next
+
+	mov -2(%bp), %cx
+	mov -6(%bp), %dx
+	shl $8, %dx
+	add %dx, %cx
+	call _draw_square
+
+_draw_number_next:
+	incw -6(%bp)
+	mov -4(%bp), %ax
+	shl $1, %ax
+	mov %ax, -4(%bp)
+	cmp $0, %ax
+	jne _draw_number_loop
+
+_draw_number_done:
+	add $6, %sp
+	pop %bp
+	ret
+
+	// @cx column, row
+_draw_square:
+	push %bp
+	push %ds
+
+	mov $0xb000, %ax
+	mov %ax, %ds
+	movzx %ch, %di
+	shl $1, %di
+	and $0x00, %ch
+	imul $160, %cx, %bx
+	movw $0x1720, 0x8000(%bx, %di, 1)
+
+	pop %ds
+	pop %bp
+	ret
 
 /***************************
  * Global Descriptor Table *
  ***************************/
+.code32
+.set GDT_DESC_LIMIT, 4
 
 _gdt_desc:
-	.word GDT_DESC_LIMIT * 8 // One descriptor is 8 bytes long
+	.word GDT_DESC_LIMIT * 8 - 1// One descriptor is 8 bytes long
 	.long _gdt
 
 .align 8
 _gdt:
 	// Null selector
-	.word	0, 0
-	.byte	0, 0, 0, 0
+	.word 0x0000, 0x0000
+	.byte 0x00, 0x00, 0x00, 0x00
 
 	// Code selector
-	.word	0xFFFF, 0
-	.byte	0, 0x9A, 0xCF, 0
+	.word 0xFFFF, 0
+	.byte 0, 0x9A, 0xCF, 0
 
 	// Data selector
-	.word	0xFFFF, 0
-	.byte	0, 0x92, 0xCF, 0
+	.word 0xFFFF, 0
+	.byte 0, 0x92, 0xCF, 0
+
+	// Null selector
+	.word 0, 0
+	.byte 0, 0, 0, 0
 
 /**********************
  * Interrupt Handlers *

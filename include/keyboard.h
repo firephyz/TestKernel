@@ -15,10 +15,10 @@
 #define ENTER_KEYCODE_MAP		0xFF
 
 struct keyboard {
-	int start;
-	int end;
-	uint8_t buffer[KBD_BUFFER_SIZE];
-	uint8_t ctr_mask;
+	volatile int start;
+	volatile int end;
+	volatile uint8_t buffer[KBD_BUFFER_SIZE];
+	volatile uint8_t ctr_mask;
 };
 
 extern char key_codes[256];
