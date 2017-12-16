@@ -2,7 +2,7 @@
 #define CONSOLE_INCLUDED
 
 #include <stdint.h>
-#include "kernel.h"
+#include "kinit.h"
 
 #define CONSOLE_WIDTH 80
 #define CONSOLE_HEIGHT 25

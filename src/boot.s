@@ -409,24 +409,3 @@ _gdt:
 	// Null selector
 	.word 0, 0
 	.byte 0, 0, 0, 0
-
-/**********************
- * Interrupt Handlers *
- **********************/
-
-.section .idt_handlers, "ax"
-
-.global _interrupt_00
-_interrupt_00:
-	call handle_int_00
-	iret
-
-.global _interrupt_09
-_interrupt_09:
-	call handle_int_09
-	iret
-
-.global _interrupt_xx
-_interrupt_xx:
-	call handle_int_xx
-	iret

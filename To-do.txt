@@ -1,5 +1,8 @@
 To-do List
 
+- Change interrupt handlers in interrupts.c to use the gcc "interrupt" function attribute
+	so that I don't have to manually at the iret instruction. And so that special registers
+	like sse and mmx are saved when the handler is invoked.
 - Make changing of the console state flags easier
 - Make the interrupt handling system more coherent and 
 	organized. (Shouldn't be in kernel.c right?)

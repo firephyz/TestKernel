@@ -1,7 +1,8 @@
-#include "kernel.h"
+#include "kinit.h"
 #include "console.h"
 #include "keyboard.h"
 #include "pci_ide.h"
+#include "interrupts.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -11,36 +12,52 @@ struct idt_ptr_t idt_ptr;
 struct idt_descriptor idt_table[256] __attribute__((aligned (8)));
 
 // Must put in own section so that it is loaded at the OS_ENTRY point
-__attribute__((section (".os_entry")))
-void kernel_start(void) {
+void init(void) {
 
 	// Init console soon to get debug output
+	pic_init();
 	console_init();
-	//init_bridge();
-	//keyboard_init();
+	pci_init();
+	keyboard_init();
 
 	// Only enable interrupts once all init is complete.
 	// Will probably change this later.
-	//fill_idt_table();
+	idt_table_init();
 
 	// Print the welcome message.
 	char * welcome = "\n\
- ***************************\n\
- *        Welcome to       *\n\
- *        <OS_NAME>        *\n\
- *                         *\n\
- * Use at your own risk... *\n\
- ***************************\n\n";
- 	int index = 0;
- 	while(welcome[index] != '\0') {
- 		console_putchar(welcome[index]);
- 		++index;
- 		// Add small delay. It looks cool :)
- 		for(int i = 0; i < 5000000; ++i) {}
- 	}
+	***************************\n\
+	*        Welcome to       *\n\
+	*        <OS_NAME>        *\n\
+	*                         *\n\
+	* Use at your own risk... *\n\
+	***************************\n\n";
+	int index = 0;
+	while(welcome[index] != '\0') {
+		console_putchar(welcome[index]);
+		++index;
+	}
 
- 	// Begin main os prompt loop
+	// Begin main os prompt loop
 	run_prompt();
+}
+
+void pic_init() {
+
+	outb(PIC_MASTER_COMMAND_PORT, 0x11);
+	outb(PIC_SLAVE_COMMAND_PORT, 0x11);
+
+	outb(PIC_MASTER_DATA_PORT, 0x20);
+	outb(PIC_SLAVE_DATA_PORT, 0x28);
+
+	outb(PIC_MASTER_DATA_PORT, 0x04);
+	outb(PIC_SLAVE_DATA_PORT, 0x02);
+
+	outb(PIC_MASTER_DATA_PORT, 0x05);
+	outb(PIC_SLAVE_DATA_PORT, 0x01);
+
+	outb(PIC_MASTER_DATA_PORT, 0xFC);
+	outb(PIC_SLAVE_DATA_PORT, 0xFF);
 }
 
 void run_prompt() {
@@ -136,56 +153,10 @@ void check_input_runoff(char input_char) {
 // Very simple printing wrapper for reporting kernel events
 void kprint(char * string) {
 
-	static char * k_string_starter = " <KERNEL> : ";
+	static char * k_string_starter = " <KERNEL> ";
 	console_print_string(k_string_starter);
 	console_print_string(string);
 	console_putchar('\n');
-}
-
-
-void fill_idt_table() {
-
-	idt_ptr.limit = sizeof(struct idt_descriptor) * 256 - 1;
-	idt_ptr.base = (uint32_t)&idt_table;
-
-	for(int i = 0; i < 256; ++i) {
-		if(i == IRQ_KEYBOARD) {
-			idt_table[i] = create_idt_entry((int)0x08, (uint32_t)&_interrupt_09);
-		}
-		else if(i == IRQ_PIT) {
-			idt_table[i] = create_idt_entry((int)0x08, (uint32_t)&_interrupt_00);
-		}
-		else {
-			idt_table[i] = create_idt_entry((int)0x08, (uint32_t)&_interrupt_xx);
-		}
-	}
-
-	// Load the new table just made
-	asm("lidt idt_ptr\n"
-		"sti\n");
-
-	kprint("IDT Table setup complete.");
-}
-
-struct idt_descriptor create_idt_entry(uint16_t selector, uint32_t offset) {
-
-	uint32_t first_word = (selector << 16) | (offset & 0xFFFF);
-	uint32_t second_word = (offset & 0xFFFF0000) | 0x8F00;
-
-	return (struct idt_descriptor){first_word, second_word};
-}
-
-// PIT Timer Handler
-void handle_int_00() {
-
-	// Do some cool time related stuff here
-
-	// Send done signal to PIC
-	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
-}
-
-void handle_int_xx() {
-	return;
 }
 
 size_t strlen(char * string) {

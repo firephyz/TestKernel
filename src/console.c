@@ -1,5 +1,5 @@
 #include "console.h"
-#include "kernel.h"
+#include "kinit.h"
 #include <stdint.h>
 
 // Should only be used by internal printing functions

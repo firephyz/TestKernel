@@ -1,21 +1,25 @@
 #include "pci_ide.h"
-#include "kernel.h"
+#include "kinit.h"
 #include "console.h"
 
-void init_bridge() {
+void check_device(uint8_t bus, uint8_t device, uint8_t function);
 
-	load_conf_addr(0, 0, 0);
-	for(int i = 17; i < 32; ++i) {
-		uint32_t result = pci_read_32(i);
-		console_print_int(result, PRT_BASE_16);
-		console_putchar('\n');
-	}
+void pci_init() {
 
-	// for(int bus = 0; bus < 256; ++bus) {
-	// 	for(int dev = 0; dev < 32; ++dev) {
-	// 		check_device(bus, dev);
-	// 	}
+	// load_conf_addr(0, 0, 0);
+	// for(int i = 17; i < 32; ++i) {
+	// 	uint32_t result = pci_read_32(i);
+	// 	console_print_int(result, PRT_BASE_16);
+	// 	console_putchar('\n');
 	// }
+
+	for(int bus = 0; bus < 256; ++bus) {
+		for(int dev = 0; dev < 32; ++dev) {
+			for(int func = 0; func < 8; ++func) {
+				check_device(bus, dev, func);
+			}
+		}
+	}
 }
 
 void load_conf_addr(uint8_t bus, uint8_t device, uint8_t function) {
@@ -60,20 +64,22 @@ uint32_t pci_read_32(const uint8_t reg) {
 	return inl(PMC_CONFDAT);
 }
 
-// void check_device(uint8_t bus, uint8_t device) {
+void check_device(uint8_t bus, uint8_t device, uint8_t function) {
 
-// 	uint32_t addr = 0x80000000 | (bus << 16) | (device << 11);
-// 	outl(PMC_CONFADD, addr);
-// 	uint32_t result = inl(PMC_CONFDAT);
+	uint32_t addr = 0x80000000 | (bus << 16) | (device << 11) | (function << 8);
+	outl(PMC_CONFADDR, addr);
+	//uint32_t result = inl(PMC_CONFDAT);
 
-// 	if(!(~result)) return;
+	//if(!(~result)) return;
 
-// 	console_print_string("PMC Vendor and Device: [");
-// 	console_print_int(bus, PRT_BASE_10);
-// 	console_putchar(':');
-// 	console_print_int(device, PRT_BASE_10);
-// 	console_putchar(']');
-// 	console_putchar(' ');
-// 	console_print_int(result, PRT_BASE_16);
-// 	console_putchar('\n');
-// }
+	// console_print_string(" DEVICE [");
+	// console_print_int(bus, PRT_BASE_16);
+	// console_putchar(':');
+	// console_print_int(device, PRT_BASE_16);
+	// console_putchar(':');
+	// console_print_int(function, PRT_BASE_16);
+	// console_putchar(']');
+	// console_putchar(' ');
+	// console_print_int(result, PRT_BASE_16);
+	// console_putchar('\n');
+}

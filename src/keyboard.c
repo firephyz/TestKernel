@@ -1,5 +1,5 @@
 #include "keyboard.h"
-#include "kernel.h"
+#include "kinit.h"
 #include "console.h"
 #include <stdint.h>
 
@@ -77,43 +77,4 @@ char getc() {
 	}
 
 	return key_codes[result];
-}
-
-void handle_int_09() {
-
-	// GCC for some reason is not acknowledging that inb
-	// and outb replace a register. Thus we must do the compiler's
-	// job and store those registers outselves
-	//asm volatile ("push %eax");
-
-	uint8_t input = inb(KEYBOARD_DATA_PORT);
-
-	// Handle left and right shift
-	if(input == 0x2A || input == 0x36) {
-		kbd.ctr_mask |= CONTROL_SHIFT;
-	}
-	else if (input == 0xAA || input == 0xB6) {
-		kbd.ctr_mask &= !CONTROL_SHIFT;
-	}
-	// Only report actual key presses, not break codes
-	else if(input < 0x80) {
-		// Check if buffer is already full
-		if(kbd.end == kbd.start - 1 ||
-			(kbd.start == 0 && kbd.end == KBD_BUFFER_SIZE - 1)) {
-			return;
-		}
-
-		kbd.buffer[kbd.end] = input;
-
-		kbd.end++;
-		if(kbd.end == KBD_BUFFER_SIZE) kbd.end = 0;
-	}
-
-	// Send done signal to PIC
-	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
-
-	//console_putchar('[');
-	//console_print_int(kbd.end, PRT_BASE_10);
-
-	//asm volatile ("pop %eax");
 }

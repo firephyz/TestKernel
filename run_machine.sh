@@ -1,13 +1,18 @@
 #!/bin/bash
 
 DEBUG=
+KVM=
 
 if [ "$1" = "-debug" ]; then
 	DEBUG="-s -S"
 fi
 
 if [ ! -z "$DEBUG" ]; then
-	konsole -e bash -c 'cd ~/dev/kernel/test && gdb -iex "source misc/debug.gdbinit"'
+	konsole -e bash -c 'cd ~/dev/kernel/test/TestKernel && gdb -iex "source misc/debug.gdbinit"'
+fi
+
+if [ ! -z "$KVM" ]; then
+	KVM=-enable-kvm
 fi
 
 # Qemu's disk geometry detection is very strange. Will manually specify for now. Also, the cylinders
@@ -18,7 +23,7 @@ fi
 # -chardev stdio,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios
 # -bios /home/firephyz/src/seabios/out/bios.bin # Custom built bios for testing
 qemu-system-i386 $DEBUG																\
-				 -enable-kvm                          								\
+				 $KVM 			                       								\
                  -drive file=./boot.bin,if=ide,format=raw,cyls=1,heads=1,secs=15	\
                  -vga std                             								\
                  -m 1024M                             								\

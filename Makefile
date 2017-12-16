@@ -12,9 +12,9 @@ SOURCES=$(wildcard src/*.c)
 FILES=$(patsubst src/%.c,%,$(SOURCES))
 OBJS=$(patsubst %,build/%.o,$(FILES))
 
-DEBUG=
-OPTIMIZE=-O2
-COMPILE_FLAGS=-fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include
+DEBUG=-g
+OPTIMIZE=-O0
+COMPILE_FLAGS=-mno-80387 -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include
 
 all: strip
 	@# Extract total size info by reading the FINAL_ADDR symbol from build/boot.elf. Hacky I know.

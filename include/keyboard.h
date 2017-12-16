@@ -2,7 +2,7 @@
 #define KEYBOARD_INCLUDED
 
 #include <stdint.h>
-#include "kernel.h"
+#include "kinit.h"
 
 // Keyboard control constants
 #define CONTROL_CLEAR	0x0
@@ -15,7 +15,7 @@
 #define ENTER_KEYCODE_MAP		0xFF
 
 struct keyboard {
-	volatile int start;
+	int start;
 	volatile int end;
 	volatile uint8_t buffer[KBD_BUFFER_SIZE];
 	volatile uint8_t ctr_mask;
@@ -27,6 +27,5 @@ extern struct keyboard kbd;
 
 void keyboard_init();
 char getc();
-void handle_int_09();
 
 #endif

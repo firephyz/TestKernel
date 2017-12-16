@@ -31,7 +31,7 @@ SECTIONS {
 /***************
  * Kernel code *
  ***************/
-	.os_start OS_ENTRY 			: AT(0x400)		{ build/kernel.o (.os_entry)
+	.os_start OS_ENTRY 			: AT(0x400)		{ build/kinit.o (.init_entry)
 												  build/* (.text) 
 												  build/* (.data) 
 												  build/* (.rodata*) }
