@@ -61,6 +61,7 @@ void kprint(char * string);
 void run_prompt();
 void get_input_command(char * string);
 void check_input_runoff(char input);
+void print_cpuid();
 
 size_t strlen(char * string);
 
@@ -115,6 +116,19 @@ static inline void outl(uint16_t port, uint32_t value) {
 		:
 		: "dN" (port), "a" (value));
 	return;
+}
+
+static inline void cpuid(uint32_t eax_value, uint32_t * results) {
+
+	asm volatile ("mov %0, %%eax\n\
+				   cpuid\n\
+				   mov %%eax, 0(%1)\n\
+				   mov %%ebx, 4(%1)\n\
+				   mov %%ecx, 8(%1)\n\
+				   mov %%edx, 12(%1)\n"
+		: 
+		: "g" (eax_value), "p" (results)
+		: "eax", "ebx", "ecx", "edx");
 }
 
 #endif

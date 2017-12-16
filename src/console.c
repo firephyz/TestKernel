@@ -87,7 +87,7 @@ void console_print_string(char * string) {
 void console_print_int(int32_t num, int base) {
 
 	int is_negative = 0;
-	if(num < 0) {
+	if(num < 0 && base == PRT_BASE_10) {
 		is_negative = 1;
 		num = -num;
 	}
@@ -116,11 +116,8 @@ void console_print_int(int32_t num, int base) {
 
 	// Loop through the number and gather the digits
 	while(index >= 0) {
-		if(num == 0) {
-			break;
-		}
 
-		unsigned int mod = num % base;
+		unsigned int mod = (unsigned int)num % base;
 		if(mod < 10) {
 			nums[index] = mod + '0';
 		}
@@ -129,6 +126,8 @@ void console_print_int(int32_t num, int base) {
 		}
 		num = num / base;
 		--index;
+
+		if(num == 0) break;
 	}
 
 	// Append the 0x, 0b, 0o if need be

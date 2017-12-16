@@ -13,7 +13,7 @@ FILES=$(patsubst src/%.c,%,$(SOURCES))
 OBJS=$(patsubst %,build/%.o,$(FILES))
 
 DEBUG=-g
-OPTIMIZE=-O0
+OPTIMIZE=-O2
 COMPILE_FLAGS=-mno-80387 -fno-asynchronous-unwind-tables -ffreestanding -I$(DIR)/include
 
 all: strip

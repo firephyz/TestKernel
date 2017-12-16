@@ -74,5 +74,6 @@ void handle_int_09(struct interrupt_frame * frame) {
 }
 
 void handle_int_xx(struct interrupt_frame * frame) {
+	asm("hlt\njmp -2");
 	//console_print_string("Interrupt: ");
 }

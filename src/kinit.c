@@ -24,6 +24,8 @@ void init(void) {
 	// Will probably change this later.
 	idt_table_init();
 
+	print_cpuid();
+
 	// Print the welcome message.
 	char * welcome = "\n\
 	***************************\n\
@@ -157,6 +159,32 @@ void kprint(char * string) {
 	console_print_string(k_string_starter);
 	console_print_string(string);
 	console_putchar('\n');
+}
+
+void print_cpuid() {
+
+	int32_t cpuid_buf[4];
+	int max_cpuid_query = 1;
+
+	for(int i = 0; i <= max_cpuid_query; ++i) {
+		cpuid(i, cpuid_buf);
+		console_print_string(" <KERNEL> CPUID_");
+		console_print_int(i, PRT_BASE_10);
+		console_print_string(" [");
+		console_print_int(cpuid_buf[0], PRT_BASE_16);
+		console_putchar(':');
+		console_print_int(cpuid_buf[1], PRT_BASE_16);
+		console_putchar(':');
+		console_print_int(cpuid_buf[2], PRT_BASE_16);
+		console_putchar(':');
+		console_print_int(cpuid_buf[3], PRT_BASE_16);
+		console_putchar(']');
+		console_putchar('\n');
+
+		if(i == 0) max_cpuid_query = cpuid_buf[0];
+	}
+
+	return;
 }
 
 size_t strlen(char * string) {

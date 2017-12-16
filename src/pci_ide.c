@@ -68,9 +68,9 @@ void check_device(uint8_t bus, uint8_t device, uint8_t function) {
 
 	uint32_t addr = 0x80000000 | (bus << 16) | (device << 11) | (function << 8);
 	outl(PMC_CONFADDR, addr);
-	//uint32_t result = inl(PMC_CONFDAT);
+	// uint32_t result = inl(PMC_CONFDAT);
 
-	//if(!(~result)) return;
+	// if(!(~result)) return;
 
 	// console_print_string(" DEVICE [");
 	// console_print_int(bus, PRT_BASE_16);
